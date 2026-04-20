@@ -43,7 +43,7 @@ const FILTER_RANGES = [
   { label: 'ALL', days: 3650 },
 ]
 
-// Plain text labels â no emojis to avoid encoding issues
+// Plain text labels Ã¢ÂÂ no emojis to avoid encoding issues
 const CATEGORY_LABELS: Record<string, string> = {
   home: 'B&E',
   car: 'VEH',
