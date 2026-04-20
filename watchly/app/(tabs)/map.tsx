@@ -62,26 +62,21 @@ export default function MapScreen() {
 
     const { data, error } = await supabase
       .from('crime_reports_with_category')
-      .select('id, title, incident_type, incident_date, category_name, category_color, category_icon, address_suburb')
+      .select('id, title, incident_type, incident_date, category_name, category_color, category_icon, address_suburb, latitude, longitude')
       .gte('incident_date', since.toISOString().split('T')[0])
       .order('incident_date', { ascending: false })
       .limit(500)
 
     if (!error && data) {
-      const withCoords = data.map((r: any) => ({
-        ...r,
-        latitude: CANBERRA_REGION.latitude + (Math.random() - 0.5) * 0.1,
-        longitude: CANBERRA_REGION.longitude + (Math.random() - 0.5) * 0.1,
-      }))
-      setReports(withCoords)
+      // Only include reports that have valid coordinates
+      const valid = data.filter((r: any) => r.latitude && r.longitude)
+      setReports(valid)
     }
     setLoading(false)
   }
 
-  // Refresh when filter changes
   useEffect(() => { fetchReports() }, [selectedFilter])
 
-  // Refresh every time this screen comes into focus (e.g. after submitting a report)
   useFocusEffect(useCallback(() => { fetchReports() }, [selectedFilter]))
 
   if (Platform.OS === 'web') {
@@ -101,7 +96,6 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>WATCHLY</Text>
         <Text style={styles.headerSub}>
@@ -109,7 +103,6 @@ export default function MapScreen() {
         </Text>
       </View>
 
-      {/* Map */}
       <MapView
         style={StyleSheet.absoluteFillObject}
         initialRegion={CANBERRA_REGION}
@@ -165,7 +158,6 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Filter bar */}
       <View style={styles.filterBar}>
         {FILTER_RANGES.map((f, i) => (
           <TouchableOpacity
@@ -180,7 +172,6 @@ export default function MapScreen() {
         ))}
       </View>
 
-      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/(tabs)/report')}
