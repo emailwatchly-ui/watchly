@@ -15,19 +15,32 @@ export default function LoginScreen() {
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleEmailAuth = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('Required', 'Please enter your email and password.')
       return
     }
+    setLoading(true)
     try {
-      setLoading(true)
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password.trim()
+        })
         if (error) throw error
-        Alert.alert('Account created!', 'Welcome to Watchly. You are now signed in.')
+        if (data.session) {
+          router.replace('/(tabs)/map')
+        } else {
+          Alert.alert('Check your email', 'Please confirm your email to continue.')
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim()
+        })
         if (error) throw error
+        if (data.session) {
+          router.replace('/(tabs)/map')
+        }
       }
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Something went wrong.')
@@ -41,11 +54,8 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Top accent bar */}
       <View style={styles.accentBar} />
-
       <View style={styles.content}>
-        {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoIcon}>
             <Text style={styles.logoEmoji}>👁</Text>
@@ -54,7 +64,6 @@ export default function LoginScreen() {
           <Text style={styles.tagline}>Community Crime Awareness</Text>
         </View>
 
-        {/* Features */}
         <View style={styles.features}>
           {[
             { icon: '📍', text: 'Pin-drop crime reporting' },
@@ -69,7 +78,6 @@ export default function LoginScreen() {
           ))}
         </View>
 
-        {/* Auth form */}
         <View style={styles.authSection}>
           <TextInput
             style={styles.input}
@@ -78,6 +86,7 @@ export default function LoginScreen() {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            autoCorrect={false}
             keyboardType="email-address"
           />
           <TextInput
@@ -87,10 +96,12 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
           />
 
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={handleEmailAuth}
             disabled={loading}
             activeOpacity={0.85}
@@ -103,17 +114,16 @@ export default function LoginScreen() {
             }
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setIsSignUp(!isSignUp)}
+          >
             <Text style={styles.toggleText}>
               {isSignUp
                 ? 'Already have an account? Sign in'
                 : "Don't have an account? Create one"}
             </Text>
           </TouchableOpacity>
-
-          <Text style={styles.disclaimer}>
-            By continuing, you agree to report crimes responsibly.
-          </Text>
         </View>
       </View>
 
@@ -136,7 +146,7 @@ const styles = StyleSheet.create({
   features: { gap: 12 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   featureIcon: { fontSize: 18, width: 28 },
-  featureText: { fontSize: 15, color: COLORS.textSecondary, letterSpacing: 0.3 },
+  featureText: { fontSize: 15, color: COLORS.textSecondary },
   authSection: { gap: 12 },
   input: {
     backgroundColor: COLORS.bgInput,
@@ -160,9 +170,10 @@ const styles = StyleSheet.create({
     elevation: 8,
     marginTop: 4,
   },
+  buttonDisabled: { opacity: 0.6 },
   primaryButtonText: { fontSize: 14, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  toggleText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 4 },
-  disclaimer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center' },
+  toggleButton: { paddingVertical: 8, alignItems: 'center' },
+  toggleText: { fontSize: 13, color: COLORS.textSecondary },
   bottomAccent: { alignItems: 'center', paddingBottom: 40 },
   versionText: { fontSize: 10, color: COLORS.textMuted, letterSpacing: 3 },
 })
