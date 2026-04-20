@@ -12,14 +12,14 @@ import { COLORS, CANBERRA_REGION } from '../../constants'
 let MapView: any = null
 let Marker: any = null
 let Callout: any = null
-let Heatmap: any = null
+let Circle: any = null
 
 if (Platform.OS !== 'web') {
   const Maps = require('react-native-maps')
   MapView = Maps.default
   Marker = Maps.Marker
   Callout = Maps.Callout
-  Heatmap = Maps.Heatmap
+  Circle = Maps.Circle
 }
 
 type Report = {
@@ -49,6 +49,39 @@ const ICON_MAP: Record<string, string> = {
   eye: '👁', activity: '💊', 'more-horizontal': '📋',
 }
 
+// Cluster nearby reports and calculate density
+function buildHeatClusters(reports: Report[]) {
+  const CLUSTER_RADIUS = 0.008 // ~800m in degrees
+  const clusters: { lat: number; lng: number; count: number; weight: number }[] = []
+
+  reports.forEach(report => {
+    const weight = report.incident_type === 'committed' ? 1.0 : 0.5
+    const existing = clusters.find(c =>
+      Math.abs(c.lat - report.latitude) < CLUSTER_RADIUS &&
+      Math.abs(c.lng - report.longitude) < CLUSTER_RADIUS
+    )
+    if (existing) {
+      existing.count++
+      existing.weight += weight
+      existing.lat = (existing.lat + report.latitude) / 2
+      existing.lng = (existing.lng + report.longitude) / 2
+    } else {
+      clusters.push({ lat: report.latitude, lng: report.longitude, count: 1, weight })
+    }
+  })
+  return clusters
+}
+
+// Map weight to colour
+function weightToColor(weight: number, maxWeight: number): string {
+  const ratio = Math.min(weight / maxWeight, 1)
+  if (ratio < 0.25) return '#00C800'   // green
+  if (ratio < 0.5)  return '#FFFF00'   // yellow
+  if (ratio < 0.75) return '#FF7E00'   // orange
+  if (ratio < 0.9)  return '#FF0000'   // red
+  return '#8B0000'                      // dark red
+}
+
 export default function MapScreen() {
   const router = useRouter()
   const mapRef = useRef<any>(null)
@@ -63,22 +96,18 @@ export default function MapScreen() {
     const days = FILTER_RANGES[selectedFilter].days
     const since = new Date()
     since.setDate(since.getDate() - days)
-
     const { data, error } = await supabase
       .from('crime_reports_with_category')
       .select('id, title, incident_type, incident_date, category_name, category_color, category_icon, address_suburb, latitude, longitude')
       .gte('incident_date', since.toISOString().split('T')[0])
       .order('incident_date', { ascending: false })
       .limit(500)
-
     if (!error && data) {
-      const valid = data.filter((r: any) => r.latitude && r.longitude)
-      setReports(valid)
+      setReports(data.filter((r: any) => r.latitude && r.longitude))
     }
     setLoading(false)
   }
 
-  // Auto-centre on user location on mount
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
@@ -103,10 +132,7 @@ export default function MapScreen() {
     setLocating(true)
     try {
       const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Location permission is required.')
-        return
-      }
+      if (status !== 'granted') { Alert.alert('Permission needed', 'Location permission is required.'); return }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
       mapRef.current?.animateToRegion({
         latitude: loc.coords.latitude,
@@ -121,13 +147,9 @@ export default function MapScreen() {
     }
   }
 
-  // Build heatmap points from reports
-  // Weight committed crimes higher than attempted
-  const heatmapPoints = reports.map(r => ({
-    latitude: r.latitude,
-    longitude: r.longitude,
-    weight: r.incident_type === 'committed' ? 1.0 : 0.5,
-  }))
+  // Build circle-based heat clusters
+  const clusters = buildHeatClusters(reports)
+  const maxWeight = Math.max(...clusters.map(c => c.weight), 1)
 
   if (Platform.OS === 'web') {
     return (
@@ -146,11 +168,9 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>WATCHLY</Text>
         <View style={styles.headerRight}>
-          {/* Heat map toggle */}
           <TouchableOpacity
             style={[styles.heatmapToggle, showHeatmap && styles.heatmapToggleActive]}
             onPress={() => setShowHeatmap(!showHeatmap)}
@@ -165,7 +185,6 @@ export default function MapScreen() {
         </View>
       </View>
 
-      {/* Map */}
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFillObject}
@@ -174,21 +193,23 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
       >
-        {/* Heat map layer */}
-        {showHeatmap && heatmapPoints.length > 0 && Heatmap && (
-          <Heatmap
-            points={heatmapPoints}
-            opacity={0.75}
-            radius={40}
-            gradient={{
-              colors: ['#00E400', '#FFFF00', '#FF7E00', '#FF0000', '#7E0023'],
-              startPoints: [0.05, 0.25, 0.5, 0.75, 1.0],
-              colorMapSize: 256,
-            }}
-          />
-        )}
+        {/* Circle-based heat overlay */}
+        {showHeatmap && Circle && clusters.map((cluster, i) => {
+          const color = weightToColor(cluster.weight, maxWeight)
+          const radius = 400 + (cluster.weight / maxWeight) * 600
+          return (
+            <Circle
+              key={`heat-${i}`}
+              center={{ latitude: cluster.lat, longitude: cluster.lng }}
+              radius={radius}
+              fillColor={color + '55'}
+              strokeColor={color + '99'}
+              strokeWidth={1}
+            />
+          )
+        })}
 
-        {/* Crime pins — hide when heatmap is on to reduce clutter */}
+        {/* Crime pins — hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
@@ -200,9 +221,7 @@ export default function MapScreen() {
               { backgroundColor: report.category_color },
               report.incident_type === 'attempted' && styles.markerAttempted,
             ]}>
-              <Text style={styles.markerText}>
-                {ICON_MAP[report.category_icon] || '📍'}
-              </Text>
+              <Text style={styles.markerText}>{ICON_MAP[report.category_icon] || '📍'}</Text>
             </View>
             <Callout tooltip>
               <View style={styles.callout}>
@@ -210,24 +229,15 @@ export default function MapScreen() {
                 <View style={styles.calloutBody}>
                   <View style={styles.calloutHeader}>
                     <Text style={styles.calloutCategory}>{report.category_name}</Text>
-                    <View style={[
-                      styles.calloutBadge,
-                      report.incident_type === 'attempted' ? styles.badgeAttempted : styles.badgeCommitted
-                    ]}>
-                      <Text style={styles.calloutBadgeText}>
-                        {report.incident_type.toUpperCase()}
-                      </Text>
+                    <View style={[styles.calloutBadge, report.incident_type === 'attempted' ? styles.badgeAttempted : styles.badgeCommitted]}>
+                      <Text style={styles.calloutBadgeText}>{report.incident_type.toUpperCase()}</Text>
                     </View>
                   </View>
                   <Text style={styles.calloutTitle}>{report.title}</Text>
                   <View style={styles.calloutMeta}>
-                    {report.address_suburb && (
-                      <Text style={styles.calloutMetaText}>📍 {report.address_suburb}</Text>
-                    )}
+                    {report.address_suburb && <Text style={styles.calloutMetaText}>📍 {report.address_suburb}</Text>}
                     <Text style={styles.calloutMetaText}>
-                      🗓 {new Date(report.incident_date).toLocaleDateString('en-AU', {
-                        day: 'numeric', month: 'short', year: 'numeric'
-                      })}
+                      🗓 {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </Text>
                   </View>
                 </View>
@@ -242,7 +252,7 @@ export default function MapScreen() {
         <View style={styles.legend}>
           <Text style={styles.legendLabel}>Low</Text>
           <View style={styles.legendBar}>
-            {['#00E400', '#FFFF00', '#FF7E00', '#FF0000', '#7E0023'].map((c, i) => (
+            {['#00C800', '#FFFF00', '#FF7E00', '#FF0000', '#8B0000'].map((c, i) => (
               <View key={i} style={[styles.legendSegment, { backgroundColor: c }]} />
             ))}
           </View>
@@ -258,9 +268,7 @@ export default function MapScreen() {
             style={[styles.filterButton, selectedFilter === i && styles.filterButtonActive]}
             onPress={() => setSelectedFilter(i)}
           >
-            <Text style={[styles.filterText, selectedFilter === i && styles.filterTextActive]}>
-              {f.label}
-            </Text>
+            <Text style={[styles.filterText, selectedFilter === i && styles.filterTextActive]}>{f.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -274,19 +282,11 @@ export default function MapScreen() {
       </TouchableOpacity>
 
       {/* FAB */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/(tabs)/report')}
-        activeOpacity={0.85}
-      >
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/(tabs)/report')} activeOpacity={0.85}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator color={COLORS.primary} size="small" />
-        </View>
-      )}
+      {loading && <View style={styles.loadingOverlay}><ActivityIndicator color={COLORS.primary} size="small" /></View>}
     </View>
   )
 }
@@ -297,8 +297,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
     paddingTop: 56, paddingHorizontal: 20, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(15,17,23,0.9)',
-    borderBottomWidth: 1, borderBottomColor: '#2d3148',
+    backgroundColor: 'rgba(15,17,23,0.9)', borderBottomWidth: 1, borderBottomColor: '#2d3148',
   },
   headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -313,8 +312,7 @@ const styles = StyleSheet.create({
   legend: {
     position: 'absolute', top: 112, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(15,17,23,0.85)',
-    paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: 'rgba(15,17,23,0.85)', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: '#2d3148',
   },
   legendLabel: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600' },
@@ -330,11 +328,9 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, letterSpacing: 0.5 },
   filterTextActive: { color: COLORS.textPrimary },
   markerPin: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center',
+    width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
   },
   markerAttempted: { borderStyle: 'dashed', opacity: 0.75 },
   markerText: { fontSize: 16 },
@@ -342,8 +338,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', backgroundColor: COLORS.bgCard,
     borderRadius: 12, overflow: 'hidden', width: 260,
     borderWidth: 1, borderColor: '#2d3148',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
   },
   calloutAccent: { width: 4 },
   calloutBody: { flex: 1, padding: 12, gap: 6 },
@@ -358,21 +352,17 @@ const styles = StyleSheet.create({
   calloutMetaText: { fontSize: 11, color: COLORS.textSecondary },
   locateButton: {
     position: 'absolute', bottom: 220, right: 20,
-    width: 46, height: 46, borderRadius: 23,
-    backgroundColor: COLORS.bgCard,
+    width: 46, height: 46, borderRadius: 23, backgroundColor: COLORS.bgCard,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: '#2d3148',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
   locateIcon: { fontSize: 22, color: COLORS.textPrimary },
   fab: {
     position: 'absolute', bottom: 156, right: 20,
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: COLORS.primary,
+    width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5, shadowRadius: 12, elevation: 8,
+    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8,
   },
   fabText: { fontSize: 28, fontWeight: '300', color: '#fff', lineHeight: 34 },
   loadingOverlay: { position: 'absolute', top: 110, right: 20 },
