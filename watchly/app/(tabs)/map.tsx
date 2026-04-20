@@ -1,14 +1,13 @@
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Dimensions, Platform
+  ActivityIndicator, Platform, Alert
 } from 'react-native'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'expo-router'
 import { useFocusEffect } from '@react-navigation/native'
+import * as Location from 'expo-location'
 import { supabase } from '../../lib/supabase'
 import { COLORS, CANBERRA_REGION } from '../../constants'
-
-const { width, height } = Dimensions.get('window')
 
 let MapView: any = null
 let Marker: any = null
@@ -50,9 +49,12 @@ const ICON_MAP: Record<string, string> = {
 
 export default function MapScreen() {
   const router = useRouter()
+  const mapRef = useRef<any>(null)
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
+  const [locating, setLocating] = useState(false)
   const [selectedFilter, setSelectedFilter] = useState(2)
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
 
   const fetchReports = async () => {
     setLoading(true)
@@ -68,16 +70,57 @@ export default function MapScreen() {
       .limit(500)
 
     if (!error && data) {
-      // Only include reports that have valid coordinates
       const valid = data.filter((r: any) => r.latitude && r.longitude)
       setReports(valid)
     }
     setLoading(false)
   }
 
-  useEffect(() => { fetchReports() }, [selectedFilter])
+  // Get user location on mount and auto-centre map
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude }
+        setUserLocation(coords)
+        // Auto-centre map on user location
+        setTimeout(() => {
+          mapRef.current?.animateToRegion({
+            ...coords,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }, 800)
+        }, 500)
+      }
+    })()
+  }, [])
 
+  useEffect(() => { fetchReports() }, [selectedFilter])
   useFocusEffect(useCallback(() => { fetchReports() }, [selectedFilter]))
+
+  const handleLocateMe = async () => {
+    setLocating(true)
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Location permission is required to centre the map.')
+        return
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude }
+      setUserLocation(coords)
+      mapRef.current?.animateToRegion({
+        ...coords,
+        latitudeDelta: 0.03,
+        longitudeDelta: 0.03,
+      }, 600)
+    } catch (e) {
+      Alert.alert('Error', 'Could not get your location.')
+    } finally {
+      setLocating(false)
+    }
+  }
 
   if (Platform.OS === 'web') {
     return (
@@ -96,6 +139,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>WATCHLY</Text>
         <Text style={styles.headerSub}>
@@ -103,7 +147,9 @@ export default function MapScreen() {
         </Text>
       </View>
 
+      {/* Map */}
       <MapView
+        ref={mapRef}
         style={StyleSheet.absoluteFillObject}
         initialRegion={CANBERRA_REGION}
         customMapStyle={darkMapStyle}
@@ -158,6 +204,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
+      {/* Filter bar */}
       <View style={styles.filterBar}>
         {FILTER_RANGES.map((f, i) => (
           <TouchableOpacity
@@ -172,6 +219,19 @@ export default function MapScreen() {
         ))}
       </View>
 
+      {/* GPS locate me button */}
+      <TouchableOpacity
+        style={styles.locateButton}
+        onPress={handleLocateMe}
+        activeOpacity={0.85}
+      >
+        {locating
+          ? <ActivityIndicator color={COLORS.textPrimary} size="small" />
+          : <Text style={styles.locateIcon}>◎</Text>
+        }
+      </TouchableOpacity>
+
+      {/* FAB — add report */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/(tabs)/report')}
@@ -236,6 +296,16 @@ const styles = StyleSheet.create({
   calloutTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, lineHeight: 20 },
   calloutMeta: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   calloutMetaText: { fontSize: 11, color: COLORS.textSecondary },
+  locateButton: {
+    position: 'absolute', bottom: 220, right: 20,
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#2d3148',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
+  },
+  locateIcon: { fontSize: 22, color: COLORS.textPrimary },
   fab: {
     position: 'absolute', bottom: 156, right: 20,
     width: 52, height: 52, borderRadius: 26,
