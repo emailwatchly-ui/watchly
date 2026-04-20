@@ -84,13 +84,13 @@ function buildHeatClusters(reports: Report[]) {
   return clusters
 }
 
-// Absolute thresholds â only turns red with serious crime density
+// Absolute thresholds Ã¢ÂÂ only turns red with serious crime density
 function weightToColor(weight: number): string {
-  if (weight < 5)  return '#00C800' // green  â 1-4 reports
-  if (weight < 10) return '#FFFF00' // yellow â 5-9 reports
-  if (weight < 20) return '#FF7E00' // orange â 10-19 reports
-  if (weight < 35) return '#FF0000' // red    â 20-34 reports
-  return '#8B0000'                   // dark red â 35+ reports
+  if (weight < 5)  return '#00C800' // green  Ã¢ÂÂ 1-4 reports
+  if (weight < 10) return '#FFFF00' // yellow Ã¢ÂÂ 5-9 reports
+  if (weight < 20) return '#FF7E00' // orange Ã¢ÂÂ 10-19 reports
+  if (weight < 35) return '#FF0000' // red    Ã¢ÂÂ 20-34 reports
+  return '#8B0000'                   // dark red Ã¢ÂÂ 35+ reports
 }
 
 export default function MapScreen() {
@@ -225,7 +225,7 @@ export default function MapScreen() {
           )
         })}
 
-        {/* Crime pins â hidden in heat map mode */}
+        {/* Crime pins Ã¢ÂÂ hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
@@ -312,7 +312,7 @@ export default function MapScreen() {
         }
       </TouchableOpacity>
 
-      {/* FAB â add report */}
+      {/* FAB Ã¢ÂÂ add report */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/(tabs)/report')}
@@ -360,10 +360,11 @@ const styles = StyleSheet.create({
   legendBar: { flexDirection: 'row', borderRadius: 4, overflow: 'hidden' },
   legendSegment: { width: 24, height: 12 },
   filterBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
+    position: 'absolute', bottom: 72, left: 0, right: 0,
     flexDirection: 'row', backgroundColor: COLORS.bgCard,
     borderTopWidth: 1, borderTopColor: '#2d3148',
-    padding: 8, paddingBottom: 88, gap: 2,
+    borderBottomWidth: 1, borderBottomColor: '#2d3148',
+    paddingHorizontal: 8, paddingVertical: 6, gap: 4,
   },
   filterButton: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.primary },
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
   calloutMeta: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   calloutMetaText: { fontSize: 11, color: COLORS.textSecondary },
   locateButton: {
-    position: 'absolute', bottom: 180, right: 16,
+    position: 'absolute', bottom: 132, right: 16,
     width: 46, height: 46, borderRadius: 23,
     backgroundColor: COLORS.bgCard,
     alignItems: 'center', justifyContent: 'center',
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
   },
   locateIcon: { fontSize: 22, color: COLORS.textPrimary },
   fab: {
-    position: 'absolute', bottom: 240, right: 16,
+    position: 'absolute', bottom: 192, right: 16,
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center',
