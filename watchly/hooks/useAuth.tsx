@@ -1,8 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
-import { Platform } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
-import { makeRedirectUri } from 'expo-auth-session'
 import { supabase } from '../lib/supabase'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -45,12 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signInWithGoogle = async () => {
-    const redirectUrl = makeRedirectUri({ scheme: 'watchly', path: 'auth/callback' })
+    // Use the Supabase callback URL directly - works reliably in Expo Go
+    const redirectTo = 'https://epjusywewvbjhqvoulmy.supabase.co/auth/v1/callback'
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl,
+        redirectTo,
         skipBrowserRedirect: true,
       },
     })
@@ -58,25 +57,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
 
     if (data?.url) {
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectTo
+      )
 
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url)
-        const accessToken = url.searchParams.get('access_token')
-        const refreshToken = url.searchParams.get('refresh_token')
-
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        } else {
-          // Try extracting from hash fragment
-          const hash = result.url.split('#')[1] || ''
-          const params = new URLSearchParams(hash)
-          const at = params.get('access_token')
-          const rt = params.get('refresh_token')
-          if (at && rt) {
-            await supabase.auth.setSession({ access_token: at, refresh_token: rt })
-          }
-        }
+      if (result.type === 'success') {
+        // Session is handled automatically by onAuthStateChange
+        // Give Supabase a moment to process
+        await supabase.auth.getSession()
       }
     }
   }
