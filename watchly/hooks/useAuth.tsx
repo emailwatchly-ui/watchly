@@ -36,60 +36,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
     })
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for auth state changes including OAuth callbacks
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Handle deep link callbacks
-    const handleUrl = async (url: string) => {
-      if (url.includes('access_token') || url.includes('code=')) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(url)
-        if (error) console.log('Session exchange error:', error.message)
-      }
-    }
-
-    // Listen for incoming links
-    const subscription2 = Linking.addEventListener('url', ({ url }) => handleUrl(url))
-
-    // Check if app was opened with a link
-    Linking.getInitialURL().then(url => { if (url) handleUrl(url) })
-
-    return () => {
-      subscription.unsubscribe()
-      subscription2.remove()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const signInWithGoogle = async () => {
     try {
-      // Build the redirect URL using expo-linking
-      const redirectUrl = Linking.createURL('auth/callback')
+      // Build the redirect URL using the app scheme
+      const redirectTo = Linking.createURL('auth/callback')
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo,
           skipBrowserRedirect: true,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         },
       })
 
       if (error) throw error
 
       if (data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, {
-          showInRecents: true,
-          preferEphemeralSession: false,
-        })
+        // Open the OAuth URL in an in-app browser
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          redirectTo,
+          { preferEphemeralSession: true }
+        )
 
         if (result.type === 'success' && result.url) {
-          await supabase.auth.exchangeCodeForSession(result.url)
+          // Extract the code from the callback URL and exchange it for a session
+          const url = result.url
+
+          // Try PKCE code exchange first
+          try {
+            const { error: sessionError } = await supabase.auth.exchangeCodeForSession(url)
+            if (sessionError) throw sessionError
+          } catch {
+            // Fallback: parse tokens from URL hash or query params
+            const parsed = new URL(url)
+            const accessToken = parsed.searchParams.get('access_token') ||
+              new URLSearchParams(parsed.hash.replace('#', '')).get('access_token')
+            const refreshToken = parsed.searchParams.get('refresh_token') ||
+              new URLSearchParams(parsed.hash.replace('#', '')).get('refresh_token')
+
+            if (accessToken && refreshToken) {
+              await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              })
+            }
+          }
+
+          // Refresh session state
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            setSession(session)
+            setUser(session.user)
+          }
         }
       }
     } catch (err: any) {
