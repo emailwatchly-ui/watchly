@@ -1,40 +1,51 @@
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Dimensions, ActivityIndicator, Alert, Platform
+  TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform
 } from 'react-native'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 import { COLORS } from '../../constants'
 
-const { width, height } = Dimensions.get('window')
-
 export default function LoginScreen() {
-  const { signInWithGoogle } = useAuth()
   const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
 
-  const handleGoogleSignIn = async () => {
+  const handleEmailAuth = async () => {
+    if (!email || !password) {
+      Alert.alert('Required', 'Please enter your email and password.')
+      return
+    }
     try {
       setLoading(true)
-      await signInWithGoogle()
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) throw error
+        Alert.alert('Account created!', 'Welcome to Watchly. You are now signed in.')
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+      }
     } catch (err: any) {
-      Alert.alert('Sign in failed', err.message || 'Something went wrong.')
+      Alert.alert('Error', err.message || 'Something went wrong.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <View style={styles.container}>
-      {/* Background grid pattern */}
-      <View style={styles.gridOverlay} />
-
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Top accent bar */}
       <View style={styles.accentBar} />
 
       <View style={styles.content}>
-        {/* Logo area */}
+        {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoIcon}>
             <Text style={styles.logoEmoji}>👁</Text>
@@ -43,7 +54,7 @@ export default function LoginScreen() {
           <Text style={styles.tagline}>Community Crime Awareness</Text>
         </View>
 
-        {/* Feature bullets */}
+        {/* Features */}
         <View style={styles.features}>
           {[
             { icon: '📍', text: 'Pin-drop crime reporting' },
@@ -58,148 +69,100 @@ export default function LoginScreen() {
           ))}
         </View>
 
-        {/* Sign in button */}
+        {/* Auth form */}
         <View style={styles.authSection}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email address"
+            placeholderTextColor={COLORS.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={COLORS.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
           <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
+            style={styles.primaryButton}
+            onPress={handleEmailAuth}
             disabled={loading}
             activeOpacity={0.85}
           >
-            {loading ? (
-              <ActivityIndicator color="#1a1d27" size="small" />
-            ) : (
-              <>
-                <Text style={styles.googleIcon}>G</Text>
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </>
-            )}
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.primaryButtonText}>
+                  {isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
+                </Text>
+            }
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
+            <Text style={styles.toggleText}>
+              {isSignUp
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Create one"}
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.disclaimer}>
-            By continuing, you agree to report crimes responsibly.{'\n'}
-            False reports may be removed by moderators.
+            By continuing, you agree to report crimes responsibly.
           </Text>
         </View>
       </View>
 
-      {/* Bottom accent */}
       <View style={styles.bottomAccent}>
         <Text style={styles.versionText}>WATCHLY v1.0 · AU</Text>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.03,
-    // Grid effect via background
-  },
-  accentBar: {
-    height: 3,
-    backgroundColor: COLORS.primary,
-    width: '40%',
-    marginTop: 60,
-    marginLeft: 32,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
-    justifyContent: 'center',
-    gap: 48,
-  },
-  logoContainer: {
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  logoIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  logoEmoji: {
-    fontSize: 28,
-  },
-  appName: {
-    fontSize: 42,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
-    letterSpacing: 6,
-  },
-  tagline: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  features: {
-    gap: 16,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  featureIcon: {
-    fontSize: 18,
-    width: 28,
-  },
-  featureText: {
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  accentBar: { height: 3, backgroundColor: COLORS.primary, width: '40%', marginTop: 60, marginLeft: 32 },
+  content: { flex: 1, paddingHorizontal: 32, justifyContent: 'center', gap: 36 },
+  logoContainer: { alignItems: 'flex-start', gap: 8 },
+  logoIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  logoEmoji: { fontSize: 28 },
+  appName: { fontSize: 42, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 6 },
+  tagline: { fontSize: 13, color: COLORS.textSecondary, letterSpacing: 2, textTransform: 'uppercase' },
+  features: { gap: 12 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  featureIcon: { fontSize: 18, width: 28 },
+  featureText: { fontSize: 15, color: COLORS.textSecondary, letterSpacing: 0.3 },
+  authSection: { gap: 12 },
+  input: {
+    backgroundColor: COLORS.bgInput,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 15,
-    color: COLORS.textSecondary,
-    letterSpacing: 0.3,
+    color: COLORS.textPrimary,
+    borderWidth: 1,
+    borderColor: '#2d3148',
   },
-  authSection: {
-    gap: 20,
-  },
-  googleButton: {
-    backgroundColor: COLORS.textPrimary,
+  primaryButton: {
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
     height: 54,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
+    marginTop: 4,
   },
-  googleIcon: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#4285F4',
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1d27',
-    letterSpacing: 0.3,
-  },
-  disclaimer: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    lineHeight: 17,
-  },
-  bottomAccent: {
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  versionText: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    letterSpacing: 3,
-  },
+  primaryButtonText: { fontSize: 14, fontWeight: '900', color: '#fff', letterSpacing: 2 },
+  toggleText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 4 },
+  disclaimer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center' },
+  bottomAccent: { alignItems: 'center', paddingBottom: 40 },
+  versionText: { fontSize: 10, color: COLORS.textMuted, letterSpacing: 3 },
 })
