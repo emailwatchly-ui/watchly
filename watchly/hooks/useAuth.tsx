@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { Alert } from 'react-native'
 import { Session, User } from '@supabase/supabase-js'
 import * as WebBrowser from 'expo-web-browser'
+import * as Linking from 'expo-linking'
 import { supabase } from '../lib/supabase'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -27,46 +29,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    // Handle deep link callbacks
+    const handleUrl = async (url: string) => {
+      if (url.includes('access_token') || url.includes('code=')) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(url)
+        if (error) console.log('Session exchange error:', error.message)
+      }
+    }
+
+    // Listen for incoming links
+    const subscription2 = Linking.addEventListener('url', ({ url }) => handleUrl(url))
+
+    // Check if app was opened with a link
+    Linking.getInitialURL().then(url => { if (url) handleUrl(url) })
+
+    return () => {
+      subscription.unsubscribe()
+      subscription2.remove()
+    }
   }, [])
 
   const signInWithGoogle = async () => {
-    // Use the Supabase callback URL directly - works reliably in Expo Go
-    const redirectTo = 'https://epjusywewvbjhqvoulmy.supabase.co/auth/v1/callback'
+    try {
+      // Build the redirect URL using expo-linking
+      const redirectUrl = Linking.createURL('auth/callback')
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true,
-      },
-    })
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      })
 
-    if (error) throw error
+      if (error) throw error
 
-    if (data?.url) {
-      const result = await WebBrowser.openAuthSessionAsync(
-        data.url,
-        redirectTo
-      )
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, {
+          showInRecents: true,
+          preferEphemeralSession: false,
+        })
 
-      if (result.type === 'success') {
-        // Session is handled automatically by onAuthStateChange
-        // Give Supabase a moment to process
-        await supabase.auth.getSession()
+        if (result.type === 'success' && result.url) {
+          await supabase.auth.exchangeCodeForSession(result.url)
+        }
       }
+    } catch (err: any) {
+      Alert.alert('Sign in failed', err.message || 'Something went wrong')
     }
   }
 
