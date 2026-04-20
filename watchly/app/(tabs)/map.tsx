@@ -12,12 +12,14 @@ import { COLORS, CANBERRA_REGION } from '../../constants'
 let MapView: any = null
 let Marker: any = null
 let Callout: any = null
+let Heatmap: any = null
 
 if (Platform.OS !== 'web') {
   const Maps = require('react-native-maps')
   MapView = Maps.default
   Marker = Maps.Marker
   Callout = Maps.Callout
+  Heatmap = Maps.Heatmap
 }
 
 type Report = {
@@ -54,7 +56,7 @@ export default function MapScreen() {
   const [loading, setLoading] = useState(true)
   const [locating, setLocating] = useState(false)
   const [selectedFilter, setSelectedFilter] = useState(2)
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [showHeatmap, setShowHeatmap] = useState(false)
 
   const fetchReports = async () => {
     setLoading(true)
@@ -76,18 +78,16 @@ export default function MapScreen() {
     setLoading(false)
   }
 
-  // Get user location on mount and auto-centre map
+  // Auto-centre on user location on mount
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-        const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude }
-        setUserLocation(coords)
-        // Auto-centre map on user location
         setTimeout(() => {
           mapRef.current?.animateToRegion({
-            ...coords,
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
             latitudeDelta: 0.05,
             longitudeDelta: 0.05,
           }, 800)
@@ -104,14 +104,13 @@ export default function MapScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Location permission is required to centre the map.')
+        Alert.alert('Permission needed', 'Location permission is required.')
         return
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude }
-      setUserLocation(coords)
       mapRef.current?.animateToRegion({
-        ...coords,
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
         latitudeDelta: 0.03,
         longitudeDelta: 0.03,
       }, 600)
@@ -121,6 +120,14 @@ export default function MapScreen() {
       setLocating(false)
     }
   }
+
+  // Build heatmap points from reports
+  // Weight committed crimes higher than attempted
+  const heatmapPoints = reports.map(r => ({
+    latitude: r.latitude,
+    longitude: r.longitude,
+    weight: r.incident_type === 'committed' ? 1.0 : 0.5,
+  }))
 
   if (Platform.OS === 'web') {
     return (
@@ -142,9 +149,20 @@ export default function MapScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>WATCHLY</Text>
-        <Text style={styles.headerSub}>
-          {loading ? 'Loading...' : `${reports.length} reports`}
-        </Text>
+        <View style={styles.headerRight}>
+          {/* Heat map toggle */}
+          <TouchableOpacity
+            style={[styles.heatmapToggle, showHeatmap && styles.heatmapToggleActive]}
+            onPress={() => setShowHeatmap(!showHeatmap)}
+          >
+            <Text style={[styles.heatmapToggleText, showHeatmap && styles.heatmapToggleTextActive]}>
+              🔥 Heat
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.headerSub}>
+            {loading ? 'Loading...' : `${reports.length} reports`}
+          </Text>
+        </View>
       </View>
 
       {/* Map */}
@@ -156,7 +174,22 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
       >
-        {reports.map((report) => (
+        {/* Heat map layer */}
+        {showHeatmap && heatmapPoints.length > 0 && Heatmap && (
+          <Heatmap
+            points={heatmapPoints}
+            opacity={0.75}
+            radius={40}
+            gradient={{
+              colors: ['#00E400', '#FFFF00', '#FF7E00', '#FF0000', '#7E0023'],
+              startPoints: [0.05, 0.25, 0.5, 0.75, 1.0],
+              colorMapSize: 256,
+            }}
+          />
+        )}
+
+        {/* Crime pins — hide when heatmap is on to reduce clutter */}
+        {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
             coordinate={{ latitude: report.latitude, longitude: report.longitude }}
@@ -204,6 +237,19 @@ export default function MapScreen() {
         ))}
       </MapView>
 
+      {/* Heat map legend */}
+      {showHeatmap && (
+        <View style={styles.legend}>
+          <Text style={styles.legendLabel}>Low</Text>
+          <View style={styles.legendBar}>
+            {['#00E400', '#FFFF00', '#FF7E00', '#FF0000', '#7E0023'].map((c, i) => (
+              <View key={i} style={[styles.legendSegment, { backgroundColor: c }]} />
+            ))}
+          </View>
+          <Text style={styles.legendLabel}>High</Text>
+        </View>
+      )}
+
       {/* Filter bar */}
       <View style={styles.filterBar}>
         {FILTER_RANGES.map((f, i) => (
@@ -219,19 +265,15 @@ export default function MapScreen() {
         ))}
       </View>
 
-      {/* GPS locate me button */}
-      <TouchableOpacity
-        style={styles.locateButton}
-        onPress={handleLocateMe}
-        activeOpacity={0.85}
-      >
+      {/* GPS locate button */}
+      <TouchableOpacity style={styles.locateButton} onPress={handleLocateMe} activeOpacity={0.85}>
         {locating
           ? <ActivityIndicator color={COLORS.textPrimary} size="small" />
           : <Text style={styles.locateIcon}>◎</Text>
         }
       </TouchableOpacity>
 
-      {/* FAB — add report */}
+      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/(tabs)/report')}
@@ -259,7 +301,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#2d3148',
   },
   headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 4 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerSub: { fontSize: 12, color: COLORS.textSecondary, letterSpacing: 1 },
+  heatmapToggle: {
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
+    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: '#2d3148',
+  },
+  heatmapToggleActive: { backgroundColor: '#7E0023', borderColor: '#FF0000' },
+  heatmapToggleText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  heatmapToggleTextActive: { color: '#fff' },
+  legend: {
+    position: 'absolute', top: 112, alignSelf: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(15,17,23,0.85)',
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 20, borderWidth: 1, borderColor: '#2d3148',
+  },
+  legendLabel: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600' },
+  legendBar: { flexDirection: 'row', borderRadius: 4, overflow: 'hidden' },
+  legendSegment: { width: 24, height: 12 },
   filterBar: {
     position: 'absolute', bottom: 88, left: 20, right: 20,
     flexDirection: 'row', backgroundColor: COLORS.bgCard,
