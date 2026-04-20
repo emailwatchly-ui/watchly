@@ -2,23 +2,23 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, Dimensions, Platform
 } from 'react-native'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'expo-router'
+import { useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../../lib/supabase'
 import { COLORS, CANBERRA_REGION } from '../../constants'
 
 const { width, height } = Dimensions.get('window')
 
-// Dynamic import for maps to support web
 let MapView: any = null
 let Marker: any = null
-let Circle: any = null
+let Callout: any = null
 
 if (Platform.OS !== 'web') {
   const Maps = require('react-native-maps')
   MapView = Maps.default
   Marker = Maps.Marker
-  Circle = Maps.Circle
+  Callout = Maps.Callout
 }
 
 type Report = {
@@ -42,16 +42,17 @@ const FILTER_RANGES = [
   { label: 'ALL', days: 3650 },
 ]
 
+const ICON_MAP: Record<string, string> = {
+  home: '🏠', car: '🚗', 'alert-triangle': '⚠️',
+  'dollar-sign': '💰', tool: '🔧', package: '📦',
+  eye: '👁', activity: '💊', 'more-horizontal': '📋',
+}
+
 export default function MapScreen() {
   const router = useRouter()
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedFilter, setSelectedFilter] = useState(2) // default 3M
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
-
-  useEffect(() => {
-    fetchReports()
-  }, [selectedFilter])
+  const [selectedFilter, setSelectedFilter] = useState(2)
 
   const fetchReports = async () => {
     setLoading(true)
@@ -67,8 +68,6 @@ export default function MapScreen() {
       .limit(500)
 
     if (!error && data) {
-      // Note: In production we'd get lat/lng from the geography column
-      // For now using mock coordinates near Canberra for prototype
       const withCoords = data.map((r: any) => ({
         ...r,
         latitude: CANBERRA_REGION.latitude + (Math.random() - 0.5) * 0.1,
@@ -79,12 +78,12 @@ export default function MapScreen() {
     setLoading(false)
   }
 
-  const getMarkerColor = (report: Report) => {
-    if (report.incident_type === 'attempted') return report.category_color + '88'
-    return report.category_color
-  }
+  // Refresh when filter changes
+  useEffect(() => { fetchReports() }, [selectedFilter])
 
-  // Web fallback
+  // Refresh every time this screen comes into focus (e.g. after submitting a report)
+  useFocusEffect(useCallback(() => { fetchReports() }, [selectedFilter]))
+
   if (Platform.OS === 'web') {
     return (
       <View style={styles.container}>
@@ -95,13 +94,7 @@ export default function MapScreen() {
         <View style={styles.webFallback}>
           <Text style={styles.webFallbackIcon}>🗺️</Text>
           <Text style={styles.webFallbackText}>Map view requires the mobile app</Text>
-          <Text style={styles.webFallbackSub}>Download on iOS or Android for the full experience</Text>
         </View>
-        <FilterBar
-          filters={FILTER_RANGES}
-          selected={selectedFilter}
-          onSelect={setSelectedFilter}
-        />
       </View>
     )
   }
@@ -123,67 +116,71 @@ export default function MapScreen() {
         customMapStyle={darkMapStyle}
         showsUserLocation
         showsMyLocationButton={false}
-        onPress={() => setSelectedReport(null)}
       >
         {reports.map((report) => (
           <Marker
             key={report.id}
             coordinate={{ latitude: report.latitude, longitude: report.longitude }}
-            onPress={() => setSelectedReport(report)}
+            tracksViewChanges={false}
           >
             <View style={[
               styles.markerPin,
-              { backgroundColor: getMarkerColor(report) },
+              { backgroundColor: report.category_color },
               report.incident_type === 'attempted' && styles.markerAttempted,
             ]}>
-              <Text style={styles.markerText}>{report.category_icon === 'home' ? '🏠' :
-                report.category_icon === 'car' ? '🚗' :
-                report.category_icon === 'alert-triangle' ? '⚠️' :
-                report.category_icon === 'eye' ? '👁' : '📍'}</Text>
+              <Text style={styles.markerText}>
+                {ICON_MAP[report.category_icon] || '📍'}
+              </Text>
             </View>
+            <Callout tooltip>
+              <View style={styles.callout}>
+                <View style={[styles.calloutAccent, { backgroundColor: report.category_color }]} />
+                <View style={styles.calloutBody}>
+                  <View style={styles.calloutHeader}>
+                    <Text style={styles.calloutCategory}>{report.category_name}</Text>
+                    <View style={[
+                      styles.calloutBadge,
+                      report.incident_type === 'attempted' ? styles.badgeAttempted : styles.badgeCommitted
+                    ]}>
+                      <Text style={styles.calloutBadgeText}>
+                        {report.incident_type.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.calloutTitle}>{report.title}</Text>
+                  <View style={styles.calloutMeta}>
+                    {report.address_suburb && (
+                      <Text style={styles.calloutMetaText}>📍 {report.address_suburb}</Text>
+                    )}
+                    <Text style={styles.calloutMetaText}>
+                      🗓 {new Date(report.incident_date).toLocaleDateString('en-AU', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </Callout>
           </Marker>
         ))}
       </MapView>
 
       {/* Filter bar */}
-      <FilterBar
-        filters={FILTER_RANGES}
-        selected={selectedFilter}
-        onSelect={(i) => { setSelectedFilter(i); setSelectedReport(null) }}
-      />
+      <View style={styles.filterBar}>
+        {FILTER_RANGES.map((f, i) => (
+          <TouchableOpacity
+            key={f.label}
+            style={[styles.filterButton, selectedFilter === i && styles.filterButtonActive]}
+            onPress={() => setSelectedFilter(i)}
+          >
+            <Text style={[styles.filterText, selectedFilter === i && styles.filterTextActive]}>
+              {f.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      {/* Report card popup */}
-      {selectedReport && (
-        <View style={styles.reportCard}>
-          <View style={[styles.reportCardAccent, { backgroundColor: selectedReport.category_color }]} />
-          <View style={styles.reportCardContent}>
-            <View style={styles.reportCardHeader}>
-              <Text style={styles.reportCardCategory}>{selectedReport.category_name}</Text>
-              <View style={[
-                styles.reportTypeBadge,
-                selectedReport.incident_type === 'attempted' ? styles.badgeAttempted : styles.badgeCommitted
-              ]}>
-                <Text style={styles.reportTypeBadgeText}>
-                  {selectedReport.incident_type.toUpperCase()}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.reportCardTitle}>{selectedReport.title}</Text>
-            <View style={styles.reportCardMeta}>
-              {selectedReport.address_suburb && (
-                <Text style={styles.reportCardMetaText}>📍 {selectedReport.address_suburb}</Text>
-              )}
-              <Text style={styles.reportCardMetaText}>
-                🗓 {new Date(selectedReport.incident_date).toLocaleDateString('en-AU', {
-                  day: 'numeric', month: 'short', year: 'numeric'
-                })}
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* FAB — add report */}
+      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/(tabs)/report')}
@@ -201,247 +198,74 @@ export default function MapScreen() {
   )
 }
 
-function FilterBar({ filters, selected, onSelect }: {
-  filters: typeof FILTER_RANGES
-  selected: number
-  onSelect: (i: number) => void
-}) {
-  return (
-    <View style={styles.filterBar}>
-      {filters.map((f, i) => (
-        <TouchableOpacity
-          key={f.label}
-          style={[styles.filterButton, selected === i && styles.filterButtonActive]}
-          onPress={() => onSelect(i)}
-        >
-          <Text style={[styles.filterText, selected === i && styles.filterTextActive]}>
-            {f.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingTop: 56,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+    paddingTop: 56, paddingHorizontal: 20, paddingBottom: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: 'rgba(15,17,23,0.9)',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2d3148',
+    borderBottomWidth: 1, borderBottomColor: '#2d3148',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
-    letterSpacing: 4,
-  },
-  headerSub: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
-  },
+  headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 4 },
+  headerSub: { fontSize: 12, color: COLORS.textSecondary, letterSpacing: 1 },
   filterBar: {
-    position: 'absolute',
-    bottom: 88,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    backgroundColor: COLORS.bgCard,
-    borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: '#2d3148',
-    gap: 2,
+    position: 'absolute', bottom: 88, left: 20, right: 20,
+    flexDirection: 'row', backgroundColor: COLORS.bgCard,
+    borderRadius: 12, padding: 4, borderWidth: 1, borderColor: '#2d3148', gap: 2,
   },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: COLORS.primary,
-  },
-  filterText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    letterSpacing: 0.5,
-  },
-  filterTextActive: {
-    color: COLORS.textPrimary,
-  },
+  filterButton: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  filterButtonActive: { backgroundColor: COLORS.primary },
+  filterText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, letterSpacing: 0.5 },
+  filterTextActive: { color: COLORS.textPrimary },
   markerPin: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
   },
-  markerAttempted: {
-    borderStyle: 'dashed',
+  markerAttempted: { borderStyle: 'dashed', opacity: 0.75 },
+  markerText: { fontSize: 16 },
+  callout: {
+    flexDirection: 'row', backgroundColor: COLORS.bgCard,
+    borderRadius: 12, overflow: 'hidden', width: 260,
+    borderWidth: 1, borderColor: '#2d3148',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
   },
-  markerText: {
-    fontSize: 14,
-  },
-  reportCard: {
-    position: 'absolute',
-    bottom: 160,
-    left: 16,
-    right: 16,
-    backgroundColor: COLORS.bgCard,
-    borderRadius: 16,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#2d3148',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  reportCardAccent: {
-    width: 4,
-  },
-  reportCardContent: {
-    flex: 1,
-    padding: 16,
-    gap: 8,
-  },
-  reportCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  reportCardCategory: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  reportTypeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeCommitted: {
-    backgroundColor: 'rgba(229,62,62,0.2)',
-  },
-  badgeAttempted: {
-    backgroundColor: 'rgba(236,201,75,0.2)',
-  },
-  reportTypeBadgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: COLORS.textSecondary,
-  },
-  reportCardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    lineHeight: 22,
-  },
-  reportCardMeta: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  reportCardMetaText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
+  calloutAccent: { width: 4 },
+  calloutBody: { flex: 1, padding: 12, gap: 6 },
+  calloutHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  calloutCategory: { fontSize: 10, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1.5, textTransform: 'uppercase' },
+  calloutBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  badgeCommitted: { backgroundColor: 'rgba(229,62,62,0.2)' },
+  badgeAttempted: { backgroundColor: 'rgba(236,201,75,0.2)' },
+  calloutBadgeText: { fontSize: 8, fontWeight: '800', letterSpacing: 1, color: COLORS.textSecondary },
+  calloutTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, lineHeight: 20 },
+  calloutMeta: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  calloutMetaText: { fontSize: 11, color: COLORS.textSecondary },
   fab: {
-    position: 'absolute',
-    bottom: 168,
-    right: 20,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    position: 'absolute', bottom: 156, right: 20,
+    width: 52, height: 52, borderRadius: 26,
     backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5, shadowRadius: 12, elevation: 8,
   },
-  fabText: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: '#fff',
-    lineHeight: 34,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 110,
-    right: 20,
-  },
-  webFallback: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 40,
-  },
-  webFallbackIcon: {
-    fontSize: 64,
-  },
-  webFallbackText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  webFallbackSub: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
+  fabText: { fontSize: 28, fontWeight: '300', color: '#fff', lineHeight: 34 },
+  loadingOverlay: { position: 'absolute', top: 110, right: 20 },
+  webFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  webFallbackIcon: { fontSize: 64 },
+  webFallbackText: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
 })
 
-// Dark map style for Google Maps
 const darkMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#1a1d27' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#0f1117' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#263c3f' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#6b9a76' }] },
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d3148' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
   { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a4060' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1f2835' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
-  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
-  { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1117' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#515c6d' }] },
-  { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#17263c' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#263c3f' }] },
 ]
