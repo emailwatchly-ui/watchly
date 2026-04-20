@@ -14,9 +14,9 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.watchlyreport.app",
+      "bundleIdentifier": "com.watchly.app",
       "config": {
-        "googleMapsApiKey": "AIzaSyCBH93UZ5xm7zu4ov4C2PZoUX5-ogFYyYU"
+        "googleMapsApiKey": "$(GOOGLE_MAPS_API_KEY)"
       }
     },
     "android": {
@@ -24,10 +24,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1d27"
       },
-      "package": "com.watchlyreport.app",
+      "package": "com.watchly.app",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyCBH93UZ5xm7zu4ov4C2PZoUX5-ogFYyYU"
+          "apiKey": "$(GOOGLE_MAPS_API_KEY)"
         }
       }
     },
