@@ -16,7 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.emailwatchly.watchly",
       "config": {
-        "googleMapsApiKey": "$(GOOGLE_MAPS_API_KEY)"
+        "googleMapsApiKey": "$(GOOGLE_MAPS_API_KEY)",
+        "googleSignIn": {
+          "reservedClientId": "128071343253-cmbv7a3i62tv55voo1qn5vga8k6icl3l.apps.googleusercontent.com"
+        }
       }
     },
     "android": {
@@ -52,7 +55,9 @@
     "extra": {
       "eas": {
         "projectId": ""
-      }
+      },
+      "googleIosClientId": "128071343253-cmbv7a3i62tv55voo1qn5vga8k6icl3l.apps.googleusercontent.com",
+      "googleWebClientId": "128071343253-8ibt959omp4n15sugom9ru67j1ur0rql.apps.googleusercontent.com"
     }
   }
 }
