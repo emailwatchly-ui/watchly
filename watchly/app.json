@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.watchlyreport.app",
       "config": {
-        "googleMapsApiKey": "AIzaSyDGZOfREGffl34XKQE8UASxrRPLH4CRqqo"
+        "googleMapsApiKey": "AIzaSyCBH93UZ5xm7zu4ov4C2PZoUX5-ogFYyYU"
       }
     },
     "android": {
@@ -27,7 +27,7 @@
       "package": "com.watchlyreport.app",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDGZOfREGffl34XKQE8UASxrRPLH4CRqqo"
+          "apiKey": "AIzaSyCBH93UZ5xm7zu4ov4C2PZoUX5-ogFYyYU"
         }
       }
     },
