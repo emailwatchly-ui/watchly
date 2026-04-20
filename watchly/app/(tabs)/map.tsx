@@ -43,17 +43,22 @@ const FILTER_RANGES = [
   { label: 'ALL', days: 3650 },
 ]
 
-const ICON_MAP: Record<string, string> = {
-  home: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ ', car: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ', 'alert-triangle': 'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ ÃÂÃÂ¯ÃÂÃÂ¸ÃÂÃÂ',
-  'dollar-sign': 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ°', tool: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ§', package: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¦',
-  eye: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ', activity: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ', 'more-horizontal': 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ',
+// Plain text labels — no emojis to avoid encoding issues
+const CATEGORY_LABELS: Record<string, string> = {
+  home: 'B&E',
+  car: 'VEH',
+  'alert-triangle': 'SUS',
+  'dollar-sign': 'ROB',
+  tool: 'VAN',
+  package: 'THF',
+  eye: 'SPY',
+  activity: 'DRG',
+  'more-horizontal': 'OTH',
 }
 
-// Cluster nearby reports and calculate density
 function buildHeatClusters(reports: Report[]) {
-  const CLUSTER_RADIUS = 0.002 // ~200m in degrees
+  const CLUSTER_RADIUS = 0.002
   const clusters: { lat: number; lng: number; count: number; weight: number }[] = []
-
   reports.forEach(report => {
     const weight = report.incident_type === 'committed' ? 1.0 : 0.5
     const existing = clusters.find(c =>
@@ -72,13 +77,12 @@ function buildHeatClusters(reports: Report[]) {
   return clusters
 }
 
-// Map weight to colour using absolute thresholds
 function weightToColor(weight: number): string {
-  if (weight < 5)   return '#00C800'   // green  Ã¢ÂÂ up to 4 reports
-  if (weight < 10)  return '#FFFF00'   // yellow Ã¢ÂÂ 5-9 reports
-  if (weight < 20)  return '#FF7E00'   // orange Ã¢ÂÂ 10-19 reports
-  if (weight < 35)  return '#FF0000'   // red    Ã¢ÂÂ 20-34 reports
-  return '#8B0000'                      // dark red Ã¢ÂÂ 35+ reports
+  if (weight < 5)   return '#00C800'
+  if (weight < 10)  return '#FFFF00'
+  if (weight < 20)  return '#FF7E00'
+  if (weight < 35)  return '#FF0000'
+  return '#8B0000'
 }
 
 export default function MapScreen() {
@@ -146,7 +150,6 @@ export default function MapScreen() {
     }
   }
 
-  // Build circle-based heat clusters
   const clusters = buildHeatClusters(reports)
 
   if (Platform.OS === 'web') {
@@ -157,7 +160,6 @@ export default function MapScreen() {
           <Text style={styles.headerSub}>{reports.length} reports</Text>
         </View>
         <View style={styles.webFallback}>
-          <Text style={styles.webFallbackIcon}>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂºÃÂÃÂ¯ÃÂÃÂ¸ÃÂÃÂ</Text>
           <Text style={styles.webFallbackText}>Map view requires the mobile app</Text>
         </View>
       </View>
@@ -170,15 +172,15 @@ export default function MapScreen() {
         <Text style={styles.headerTitle}>WATCHLY</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity
-            style={[styles.heatmapToggle, showHeatmap && styles.heatmapToggleActive]}
+            style={[styles.heatToggle, showHeatmap && styles.heatToggleActive]}
             onPress={() => setShowHeatmap(!showHeatmap)}
           >
-            <Text style={[styles.heatmapToggleText, showHeatmap && styles.heatmapToggleTextActive]}>
-              ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¥ Heat
+            <Text style={[styles.heatToggleText, showHeatmap && styles.heatToggleTextActive]}>
+              HEAT
             </Text>
           </TouchableOpacity>
           <Text style={styles.headerSub}>
-            {loading ? 'Loading...' : `${reports.length} reports`}
+            {loading ? 'Loading...' : (reports.length + ' reports')}
           </Text>
         </View>
       </View>
@@ -191,13 +193,12 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
       >
-        {/* Circle-based heat overlay */}
         {showHeatmap && Circle && clusters.map((cluster, i) => {
           const color = weightToColor(cluster.weight)
           const radius = 150 + Math.min(cluster.weight * 30, 200)
           return (
             <Circle
-              key={`heat-${i}`}
+              key={'heat-' + i}
               center={{ latitude: cluster.lat, longitude: cluster.lng }}
               radius={radius}
               fillColor={color + '55'}
@@ -207,7 +208,6 @@ export default function MapScreen() {
           )
         })}
 
-        {/* Crime pins ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
@@ -219,7 +219,9 @@ export default function MapScreen() {
               { backgroundColor: report.category_color },
               report.incident_type === 'attempted' && styles.markerAttempted,
             ]}>
-              <Text style={styles.markerText}>{ICON_MAP[report.category_icon] || 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ'}</Text>
+              <Text style={styles.markerLabel}>
+                {CATEGORY_LABELS[report.category_icon] || 'OTH'}
+              </Text>
             </View>
             <Callout tooltip>
               <View style={styles.callout}>
@@ -233,9 +235,9 @@ export default function MapScreen() {
                   </View>
                   <Text style={styles.calloutTitle}>{report.title}</Text>
                   <View style={styles.calloutMeta}>
-                    {report.address_suburb && <Text style={styles.calloutMetaText}>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ {report.address_suburb}</Text>}
+                    {report.address_suburb && <Text style={styles.calloutMetaText}>{report.address_suburb}</Text>}
                     <Text style={styles.calloutMetaText}>
-                      ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </Text>
                   </View>
                 </View>
@@ -245,20 +247,16 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Heat map legend */}
       {showHeatmap && (
         <View style={styles.legend}>
           <Text style={styles.legendLabel}>Low</Text>
-          <View style={styles.legendBar}>
-            {['#00C800', '#FFFF00', '#FF7E00', '#FF0000', '#8B0000'].map((c, i) => (
-              <View key={i} style={[styles.legendSegment, { backgroundColor: c }]} />
-            ))}
-          </View>
+          {['#00C800', '#FFFF00', '#FF7E00', '#FF0000', '#8B0000'].map((c, i) => (
+            <View key={i} style={[styles.legendSegment, { backgroundColor: c }]} />
+          ))}
           <Text style={styles.legendLabel}>High</Text>
         </View>
       )}
 
-      {/* Filter bar */}
       <View style={styles.filterBar}>
         {FILTER_RANGES.map((f, i) => (
           <TouchableOpacity
@@ -271,15 +269,13 @@ export default function MapScreen() {
         ))}
       </View>
 
-      {/* GPS locate button */}
       <TouchableOpacity style={styles.locateButton} onPress={handleLocateMe} activeOpacity={0.85}>
         {locating
           ? <ActivityIndicator color={COLORS.textPrimary} size="small" />
-          : <Text style={styles.locateIcon}>ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ</Text>
+          : <Text style={styles.locateText}>GPS</Text>
         }
       </TouchableOpacity>
 
-      {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={() => router.push('/(tabs)/report')} activeOpacity={0.85}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
@@ -300,22 +296,21 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerSub: { fontSize: 12, color: COLORS.textSecondary, letterSpacing: 1 },
-  heatmapToggle: {
+  heatToggle: {
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
     backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: '#2d3148',
   },
-  heatmapToggleActive: { backgroundColor: '#7E0023', borderColor: '#FF0000' },
-  heatmapToggleText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
-  heatmapToggleTextActive: { color: '#fff' },
+  heatToggleActive: { backgroundColor: '#7E0023', borderColor: '#FF0000' },
+  heatToggleText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1 },
+  heatToggleTextActive: { color: '#fff' },
   legend: {
     position: 'absolute', top: 112, alignSelf: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: 'rgba(15,17,23,0.85)', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: '#2d3148',
   },
   legendLabel: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600' },
-  legendBar: { flexDirection: 'row', borderRadius: 4, overflow: 'hidden' },
-  legendSegment: { width: 24, height: 12 },
+  legendSegment: { width: 20, height: 10, borderRadius: 2 },
   filterBar: {
     position: 'absolute', bottom: 88, left: 20, right: 20,
     flexDirection: 'row', backgroundColor: COLORS.bgCard,
@@ -326,12 +321,13 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, letterSpacing: 0.5 },
   filterTextActive: { color: COLORS.textPrimary },
   markerPin: {
-    width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
   },
-  markerAttempted: { borderStyle: 'dashed', opacity: 0.75 },
-  markerText: { fontSize: 16 },
+  markerAttempted: { opacity: 0.65 },
+  markerLabel: { fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
   callout: {
     flexDirection: 'row', backgroundColor: COLORS.bgCard,
     borderRadius: 12, overflow: 'hidden', width: 260,
@@ -355,7 +351,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#2d3148',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  locateIcon: { fontSize: 22, color: COLORS.textPrimary },
+  locateText: { fontSize: 10, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: 1 },
   fab: {
     position: 'absolute', bottom: 156, right: 20,
     width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.primary,
@@ -364,8 +360,7 @@ const styles = StyleSheet.create({
   },
   fabText: { fontSize: 28, fontWeight: '300', color: '#fff', lineHeight: 34 },
   loadingOverlay: { position: 'absolute', top: 110, right: 20 },
-  webFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  webFallbackIcon: { fontSize: 64 },
+  webFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   webFallbackText: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
 })
 
