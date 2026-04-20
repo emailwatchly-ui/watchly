@@ -1,18 +1,28 @@
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform
+  TextInput, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
 
+// All emojis via codepoint to avoid encoding issues
+const SHIELD   = String.fromCodePoint(0x1F6E1)  // shield
+const PIN      = String.fromCodePoint(0x1F4CD)  // pin
+const MAP      = String.fromCodePoint(0x1F5FA)  // map
+const CLOCK    = String.fromCodePoint(0x1F552)  // clock
+const LOCK     = String.fromCodePoint(0x1F512)  // lock
+const GOOGLE_G = String.fromCodePoint(0x1D50C)  // stylised G (fallback to globe)
+const GLOBE    = String.fromCodePoint(0x1F310)  // globe
+
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth()
-  const [email, setEmail] = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [gLoading, setGLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleEmailAuth = async () => {
@@ -37,67 +47,74 @@ export default function LoginScreen() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogle = async () => {
     try {
-      setGoogleLoading(true)
+      setGLoading(true)
       await signInWithGoogle()
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Google sign in failed.')
+      Alert.alert('Sign in failed', err.message || 'Something went wrong.')
     } finally {
-      setGoogleLoading(false)
+      setGLoading(false)
     }
   }
 
-  const GOOGLE_ICON = String.fromCodePoint(0x1F310)
-  const SHIELD_ICON = String.fromCodePoint(0x1F6E1)
-
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.accentBar} />
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top accent bar */}
+        <View style={styles.accentBar} />
 
-      <View style={styles.content}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoIcon}>
-            <Text style={styles.logoEmoji}>{SHIELD_ICON}</Text>
+        {/* Logo block */}
+        <View style={styles.logoBlock}>
+          <View style={styles.logoIconWrap}>
+            <Text style={styles.logoIconText}>{SHIELD}</Text>
           </View>
-          <Text style={styles.appName}>WATCHLY</Text>
-          <Text style={styles.tagline}>Community Crime Awareness</Text>
+          <View>
+            <Text style={styles.appName}>WATCHLY</Text>
+            <Text style={styles.tagline}>COMMUNITY CRIME AWARENESS</Text>
+          </View>
         </View>
 
-        {/* Features */}
-        <View style={styles.features}>
+        {/* Feature pills */}
+        <View style={styles.pillRow}>
           {[
-            { icon: String.fromCodePoint(0x1F4CD), text: 'Pin-drop crime reporting' },
-            { icon: String.fromCodePoint(0x1F5FA), text: 'Live community crime map' },
-            { icon: String.fromCodePoint(0x1F552), text: '3-month history timeline' },
-            { icon: String.fromCodePoint(0x1F512), text: 'Location privacy masking' },
-          ].map((f, i) => (
-            <View key={i} style={styles.featureRow}>
-              <Text style={styles.featureIcon}>{f.icon}</Text>
-              <Text style={styles.featureText}>{f.text}</Text>
+            { icon: PIN,   label: 'Pin reports' },
+            { icon: MAP,   label: 'Live map' },
+            { icon: CLOCK, label: 'History' },
+            { icon: LOCK,  label: 'Privacy' },
+          ].map((p, i) => (
+            <View key={i} style={styles.pill}>
+              <Text style={styles.pillIcon}>{p.icon}</Text>
+              <Text style={styles.pillLabel}>{p.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Auth section */}
-        <View style={styles.authSection}>
+        {/* Auth card */}
+        <View style={styles.card}>
+          <Text style={styles.cardHeading}>
+            {isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
+          </Text>
 
-          {/* Google Sign In */}
+          {/* Google button */}
           <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={googleLoading}
+            style={styles.googleBtn}
+            onPress={handleGoogle}
+            disabled={gLoading}
             activeOpacity={0.85}
           >
-            {googleLoading
-              ? <ActivityIndicator color="#333" size="small" />
+            {gLoading
+              ? <ActivityIndicator color="#1a1d27" size="small" />
               : <>
-                  <Text style={styles.googleIcon}>{GOOGLE_ICON}</Text>
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  <Text style={styles.googleBtnIcon}>{GLOBE}</Text>
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
                 </>
             }
           </TouchableOpacity>
@@ -109,118 +126,104 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Email/Password */}
-          <TextInput
-            style={styles.input}
-            placeholder="Email address"
-            placeholderTextColor={COLORS.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={COLORS.textMuted}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          {/* Email input */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>EMAIL</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              placeholderTextColor={COLORS.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoCorrect={false}
+            />
+          </View>
 
+          {/* Password input */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.inputLabel}>PASSWORD</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={isSignUp ? 'Min. 6 characters' : 'Your password'}
+              placeholderTextColor={COLORS.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+
+          {/* Primary CTA */}
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
             onPress={handleEmailAuth}
             disabled={loading}
             activeOpacity={0.85}
           >
             {loading
               ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.primaryButtonText}>
+              : <Text style={styles.primaryBtnText}>
                   {isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
                 </Text>
             }
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
+          {/* Toggle */}
+          <TouchableOpacity
+            style={styles.toggleBtn}
+            onPress={() => setIsSignUp(!isSignUp)}
+          >
             <Text style={styles.toggleText}>
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Create one"}
+              {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+              <Text style={styles.toggleTextHighlight}>
+                {isSignUp ? 'Sign in' : 'Create one'}
+              </Text>
             </Text>
           </TouchableOpacity>
-
-          <Text style={styles.disclaimer}>
-            By continuing, you agree to report crimes responsibly.
-          </Text>
         </View>
-      </View>
 
-      <View style={styles.bottomAccent}>
-        <Text style={styles.versionText}>WATCHLY v1.0 {String.fromCodePoint(0x00B7)} AU</Text>
-      </View>
+        {/* Footer */}
+        <Text style={styles.footer}>
+          By continuing you agree to report crimes responsibly
+        </Text>
+
+        <Text style={styles.version}>WATCHLY v1.0 {String.fromCodePoint(0x00B7)} AU</Text>
+      </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  accentBar: { height: 3, backgroundColor: COLORS.primary, width: '40%', marginTop: 60, marginLeft: 32 },
-  content: { flex: 1, paddingHorizontal: 32, justifyContent: 'center', gap: 36 },
-  logoContainer: { alignItems: 'flex-start', gap: 8 },
-  logoIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  logoEmoji: { fontSize: 28 },
-  appName: { fontSize: 42, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 6 },
-  tagline: { fontSize: 13, color: COLORS.textSecondary, letterSpacing: 2, textTransform: 'uppercase' },
-  features: { gap: 12 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  featureIcon: { fontSize: 18, width: 28 },
-  featureText: { fontSize: 15, color: COLORS.textSecondary, letterSpacing: 0.3 },
-  authSection: { gap: 12 },
-  googleButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    height: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  googleIcon: { fontSize: 20 },
-  googleButtonText: { fontSize: 15, fontWeight: '600', color: '#333' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  root: { flex: 1, backgroundColor: COLORS.bg },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
+  accentBar: { height: 3, width: '35%', backgroundColor: COLORS.primary, marginTop: 64, marginBottom: 40, borderRadius: 2 },
+  logoBlock: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 32 },
+  logoIconWrap: { width: 60, height: 60, borderRadius: 18, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.45, shadowRadius: 12, elevation: 8 },
+  logoIconText: { fontSize: 28 },
+  appName: { fontSize: 32, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 6, lineHeight: 36 },
+  tagline: { fontSize: 9, color: COLORS.textMuted, letterSpacing: 2.5, marginTop: 2 },
+  pillRow: { flexDirection: 'row', flewWrap: 'wrap', gap: 8, marginBottom: 32 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: '#2d3148', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
+  pillIcon: { fontSize: 13 },
+  pillLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary, letterSpacing: 0.5 },
+  card: { backgroundColor: COLORS.bgCard, borderRadius: 20, borderWidth: 1, borderColor: '#2d3148', padding: 24, gap: 16 },
+  cardHeading: { fontSize: 11, fontWeight: '800', color: COLORS.primary, letterSpacing: 2.5, marginBottom: 4 },
+  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 12, height: 52, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
+  googleBtnIcon: { fontSize: 18 },
+  googleBtnText: { fontSize: 15, fontWeight: '600', color: '#1a1a2e', letterSpacing: 0.2 },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#2d3148' },
-  dividerText: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1 },
-  input: {
-    backgroundColor: COLORS.bgInput,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    borderWidth: 1,
-    borderColor: '#2d3148',
-  },
-  primaryButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    marginTop: 4,
-  },
-  primaryButtonText: { fontSize: 14, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  toggleText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 4 },
-  disclaimer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center' },
-  bottomAccent: { alignItems: 'center', paddingBottom: 40 },
-  versionText: { fontSize: 10, color: COLORS.textMuted, letterSpacing: 3 },
+  dividerText: { fontSize: 11, color: COLORS.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
+  inputWrap: { gap: 6 },
+  inputLabel: { fontSize: 9, fontWeight: '800', color: COLORS.textMuted, letterSpacing: 2 },
+  input: { backgroundColor: COLORS.bgInput, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: COLORS.textPrimary, borderWidth: 1, borderColor: '#2d3148' },
+  primaryBtn: { backgroundColor: COLORS.primary, borderRadius: 12, height: 52, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 12, elevation: 8, marginTop: 4 },
+  primaryBtnDisabled: { opacity: 0.6 },
+  primaryBtnText: { fontSize: 13, fontWeight: '900', color: '#fff', letterSpacing: 2.5 },
+  toggleBtn: { alignItems: 'center', paddingVertical: 4 },
+  toggleText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
+  toggleTextHighlight: { color: COLORS.primary, fontWeight: '700' },
+  footer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center', marginTop: 24, lineHeight: 16 },
+  version: { fontSize: 9, color: '#2d3148', textAlign: 'center', letterSpacing: 3, marginTop: 16 },
 })
