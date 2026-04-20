@@ -44,9 +44,9 @@ const FILTER_RANGES = [
 ]
 
 const ICON_MAP: Record<string, string> = {
-  home: 'ÃÂ°ÃÂÃÂÃÂ ', car: 'ÃÂ°ÃÂÃÂÃÂ', 'alert-triangle': 'ÃÂ¢ÃÂÃÂ ÃÂ¯ÃÂ¸ÃÂ',
-  'dollar-sign': 'ÃÂ°ÃÂÃÂÃÂ°', tool: 'ÃÂ°ÃÂÃÂÃÂ§', package: 'ÃÂ°ÃÂÃÂÃÂ¦',
-  eye: 'ÃÂ°ÃÂÃÂÃÂ', activity: 'ÃÂ°ÃÂÃÂÃÂ', 'more-horizontal': 'ÃÂ°ÃÂÃÂÃÂ',
+  home: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ ', car: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ', 'alert-triangle': 'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ ÃÂÃÂ¯ÃÂÃÂ¸ÃÂÃÂ',
+  'dollar-sign': 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ°', tool: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ§', package: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¦',
+  eye: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ', activity: 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ', 'more-horizontal': 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ',
 }
 
 // Cluster nearby reports and calculate density
@@ -74,11 +74,11 @@ function buildHeatClusters(reports: Report[]) {
 
 // Map weight to colour using absolute thresholds
 function weightToColor(weight: number): string {
-  if (weight < 5)   return '#00C800'   // green  â up to 4 reports
-  if (weight < 10)  return '#FFFF00'   // yellow â 5-9 reports
-  if (weight < 20)  return '#FF7E00'   // orange â 10-19 reports
-  if (weight < 35)  return '#FF0000'   // red    â 20-34 reports
-  return '#8B0000'                      // dark red â 35+ reports
+  if (weight < 5)   return '#00C800'   // green  Ã¢ÂÂ up to 4 reports
+  if (weight < 10)  return '#FFFF00'   // yellow Ã¢ÂÂ 5-9 reports
+  if (weight < 20)  return '#FF7E00'   // orange Ã¢ÂÂ 10-19 reports
+  if (weight < 35)  return '#FF0000'   // red    Ã¢ÂÂ 20-34 reports
+  return '#8B0000'                      // dark red Ã¢ÂÂ 35+ reports
 }
 
 export default function MapScreen() {
@@ -157,7 +157,7 @@ export default function MapScreen() {
           <Text style={styles.headerSub}>{reports.length} reports</Text>
         </View>
         <View style={styles.webFallback}>
-          <Text style={styles.webFallbackIcon}>ÃÂ°ÃÂÃÂÃÂºÃÂ¯ÃÂ¸ÃÂ</Text>
+          <Text style={styles.webFallbackIcon}>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂºÃÂÃÂ¯ÃÂÃÂ¸ÃÂÃÂ</Text>
           <Text style={styles.webFallbackText}>Map view requires the mobile app</Text>
         </View>
       </View>
@@ -174,7 +174,7 @@ export default function MapScreen() {
             onPress={() => setShowHeatmap(!showHeatmap)}
           >
             <Text style={[styles.heatmapToggleText, showHeatmap && styles.heatmapToggleTextActive]}>
-              ÃÂ°ÃÂÃÂÃÂ¥ Heat
+              ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¥ Heat
             </Text>
           </TouchableOpacity>
           <Text style={styles.headerSub}>
@@ -207,7 +207,7 @@ export default function MapScreen() {
           )
         })}
 
-        {/* Crime pins ÃÂ¢ÃÂÃÂ hidden in heat map mode */}
+        {/* Crime pins ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
@@ -219,7 +219,7 @@ export default function MapScreen() {
               { backgroundColor: report.category_color },
               report.incident_type === 'attempted' && styles.markerAttempted,
             ]}>
-              <Text style={styles.markerText}>{ICON_MAP[report.category_icon] || 'ÃÂ°ÃÂÃÂÃÂ'}</Text>
+              <Text style={styles.markerText}>{ICON_MAP[report.category_icon] || 'ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ'}</Text>
             </View>
             <Callout tooltip>
               <View style={styles.callout}>
@@ -233,9 +233,9 @@ export default function MapScreen() {
                   </View>
                   <Text style={styles.calloutTitle}>{report.title}</Text>
                   <View style={styles.calloutMeta}>
-                    {report.address_suburb && <Text style={styles.calloutMetaText}>ÃÂ°ÃÂÃÂÃÂ {report.address_suburb}</Text>}
+                    {report.address_suburb && <Text style={styles.calloutMetaText}>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ {report.address_suburb}</Text>}
                     <Text style={styles.calloutMetaText}>
-                      ÃÂ°ÃÂÃÂÃÂ {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </Text>
                   </View>
                 </View>
@@ -275,7 +275,7 @@ export default function MapScreen() {
       <TouchableOpacity style={styles.locateButton} onPress={handleLocateMe} activeOpacity={0.85}>
         {locating
           ? <ActivityIndicator color={COLORS.textPrimary} size="small" />
-          : <Text style={styles.locateIcon}>ÃÂ¢ÃÂÃÂ</Text>
+          : <Text style={styles.locateIcon}>ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ</Text>
         }
       </TouchableOpacity>
 
