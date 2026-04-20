@@ -3,44 +3,32 @@ import {
   TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform
 } from 'react-native'
 import { useState } from 'react'
-import { useRouter } from 'expo-router'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
 
 export default function LoginScreen() {
-  const router = useRouter()
+  const { signInWithGoogle } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleEmailAuth = async () => {
-    if (!email.trim() || !password.trim()) {
+    if (!email || !password) {
       Alert.alert('Required', 'Please enter your email and password.')
       return
     }
-    setLoading(true)
     try {
+      setLoading(true)
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: password.trim()
-        })
+        const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        if (data.session) {
-          router.replace('/(tabs)/map')
-        } else {
-          Alert.alert('Check your email', 'Please confirm your email to continue.')
-        }
+        Alert.alert('Account created!', 'Welcome to Watchly.')
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password.trim()
-        })
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        if (data.session) {
-          router.replace('/(tabs)/map')
-        }
       }
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Something went wrong.')
@@ -49,27 +37,44 @@ export default function LoginScreen() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true)
+      await signInWithGoogle()
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Google sign in failed.')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
+  const GOOGLE_ICON = String.fromCodePoint(0x1F310)
+  const SHIELD_ICON = String.fromCodePoint(0x1F6E1)
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.accentBar} />
+
       <View style={styles.content}>
+        {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoIcon}>
-            <Text style={styles.logoEmoji}>👁</Text>
+            <Text style={styles.logoEmoji}>{SHIELD_ICON}</Text>
           </View>
           <Text style={styles.appName}>WATCHLY</Text>
           <Text style={styles.tagline}>Community Crime Awareness</Text>
         </View>
 
+        {/* Features */}
         <View style={styles.features}>
           {[
-            { icon: '📍', text: 'Pin-drop crime reporting' },
-            { icon: '🗺️', text: 'Live community crime map' },
-            { icon: '🕐', text: '3-month history timeline' },
-            { icon: '🔒', text: 'Location privacy masking' },
+            { icon: String.fromCodePoint(0x1F4CD), text: 'Pin-drop crime reporting' },
+            { icon: String.fromCodePoint(0x1F5FA), text: 'Live community crime map' },
+            { icon: String.fromCodePoint(0x1F552), text: '3-month history timeline' },
+            { icon: String.fromCodePoint(0x1F512), text: 'Location privacy masking' },
           ].map((f, i) => (
             <View key={i} style={styles.featureRow}>
               <Text style={styles.featureIcon}>{f.icon}</Text>
@@ -78,7 +83,33 @@ export default function LoginScreen() {
           ))}
         </View>
 
+        {/* Auth section */}
         <View style={styles.authSection}>
+
+          {/* Google Sign In */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+            activeOpacity={0.85}
+          >
+            {googleLoading
+              ? <ActivityIndicator color="#333" size="small" />
+              : <>
+                  <Text style={styles.googleIcon}>{GOOGLE_ICON}</Text>
+                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                </>
+            }
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Email/Password */}
           <TextInput
             style={styles.input}
             placeholder="Email address"
@@ -86,7 +117,6 @@ export default function LoginScreen() {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
-            autoCorrect={false}
             keyboardType="email-address"
           />
           <TextInput
@@ -96,12 +126,10 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
           />
 
           <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.buttonDisabled]}
+            style={styles.primaryButton}
             onPress={handleEmailAuth}
             disabled={loading}
             activeOpacity={0.85}
@@ -114,21 +142,22 @@ export default function LoginScreen() {
             }
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={() => setIsSignUp(!isSignUp)}
-          >
+          <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
             <Text style={styles.toggleText}>
               {isSignUp
                 ? 'Already have an account? Sign in'
                 : "Don't have an account? Create one"}
             </Text>
           </TouchableOpacity>
+
+          <Text style={styles.disclaimer}>
+            By continuing, you agree to report crimes responsibly.
+          </Text>
         </View>
       </View>
 
       <View style={styles.bottomAccent}>
-        <Text style={styles.versionText}>WATCHLY v1.0 · AU</Text>
+        <Text style={styles.versionText}>WATCHLY v1.0 {String.fromCodePoint(0x00B7)} AU</Text>
       </View>
     </KeyboardAvoidingView>
   )
@@ -146,8 +175,27 @@ const styles = StyleSheet.create({
   features: { gap: 12 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   featureIcon: { fontSize: 18, width: 28 },
-  featureText: { fontSize: 15, color: COLORS.textSecondary },
+  featureText: { fontSize: 15, color: COLORS.textSecondary, letterSpacing: 0.3 },
   authSection: { gap: 12 },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    height: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  googleIcon: { fontSize: 20 },
+  googleButtonText: { fontSize: 15, fontWeight: '600', color: '#333' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#2d3148' },
+  dividerText: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1 },
   input: {
     backgroundColor: COLORS.bgInput,
     borderRadius: 12,
@@ -170,10 +218,9 @@ const styles = StyleSheet.create({
     elevation: 8,
     marginTop: 4,
   },
-  buttonDisabled: { opacity: 0.6 },
   primaryButtonText: { fontSize: 14, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  toggleButton: { paddingVertical: 8, alignItems: 'center' },
-  toggleText: { fontSize: 13, color: COLORS.textSecondary },
+  toggleText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 4 },
+  disclaimer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center' },
   bottomAccent: { alignItems: 'center', paddingBottom: 40 },
   versionText: { fontSize: 10, color: COLORS.textMuted, letterSpacing: 3 },
 })
