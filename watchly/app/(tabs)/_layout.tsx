@@ -1,46 +1,56 @@
 import { Tabs } from 'expo-router'
-import { View, Text, StyleSheet } from 'react-native'
 import { COLORS } from '../../constants'
-
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
-  return (
-    <View style={styles.tabIcon}>
-      <Text style={[styles.tabEmoji, focused && styles.tabEmojiActive]}>{emoji}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
-    </View>
-  )
-}
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false,
+        tabBarStyle: {
+          backgroundColor: COLORS.bgCard,
+          borderTopColor: '#2d3148',
+          borderTopWidth: 1,
+          height: 72,
+          paddingBottom: 12,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          letterSpacing: 0.5,
+          marginTop: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
+        },
       }}
     >
       <Tabs.Screen
         name="map"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🗺️" label="Map" focused={focused} />
+          title: 'Map',
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={String.fromCodePoint(0x1F5FA)} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="report"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="+" label="Report" focused={focused} />
+          title: 'Report',
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={String.fromCodePoint(0x1F4CB)} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="👤" label="Profile" focused={focused} />
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <TabIcon icon={String.fromCodePoint(0x1F464)} color={color} />
           ),
         }}
       />
@@ -48,33 +58,12 @@ export default function TabsLayout() {
   )
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.bgCard,
-    borderTopColor: '#2d3148',
-    borderTopWidth: 1,
-    height: 72,
-    paddingBottom: 8,
-    paddingTop: 8,
-  },
-  tabIcon: {
-    alignItems: 'center',
-    gap: 3,
-  },
-  tabEmoji: {
-    fontSize: 22,
-    opacity: 0.4,
-  },
-  tabEmojiActive: {
-    opacity: 1,
-  },
-  tabLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  tabLabelActive: {
-    color: COLORS.primary,
-  },
-})
+import { Text, View } from 'react-native'
+
+function TabIcon({ icon, color }: { icon: string; color: string }) {
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 22, color }}>{icon}</Text>
+    </View>
+  )
+}
