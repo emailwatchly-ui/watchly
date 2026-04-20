@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.watchly.app",
+      "bundleIdentifier": "com.emailwatchly.watchly",
       "config": {
         "googleMapsApiKey": "$(GOOGLE_MAPS_API_KEY)"
       }
