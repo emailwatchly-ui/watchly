@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.watchly.app",
+      "bundleIdentifier": "com.watchlyreport.app",
       "config": {
         "googleMapsApiKey": "AIzaSyDGZOfREGffl34XKQE8UASxrRPLH4CRqqo"
       }
@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1d27"
       },
-      "package": "com.watchly.app",
+      "package": "com.watchlyreport.app",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDGZOfREGffl34XKQE8UASxrRPLH4CRqqo"
