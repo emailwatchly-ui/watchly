@@ -44,14 +44,14 @@ const FILTER_RANGES = [
 ]
 
 const ICON_MAP: Record<string, string> = {
-  home: 'ð ', car: 'ð', 'alert-triangle': 'â ï¸',
-  'dollar-sign': 'ð°', tool: 'ð§', package: 'ð¦',
-  eye: 'ð', activity: 'ð', 'more-horizontal': 'ð',
+  home: 'Ã°ÂÂÂ ', car: 'Ã°ÂÂÂ', 'alert-triangle': 'Ã¢ÂÂ Ã¯Â¸Â',
+  'dollar-sign': 'Ã°ÂÂÂ°', tool: 'Ã°ÂÂÂ§', package: 'Ã°ÂÂÂ¦',
+  eye: 'Ã°ÂÂÂ', activity: 'Ã°ÂÂÂ', 'more-horizontal': 'Ã°ÂÂÂ',
 }
 
 // Cluster nearby reports and calculate density
 function buildHeatClusters(reports: Report[]) {
-  const CLUSTER_RADIUS = 0.008 // ~800m in degrees
+  const CLUSTER_RADIUS = 0.004 // ~400m in degrees
   const clusters: { lat: number; lng: number; count: number; weight: number }[] = []
 
   reports.forEach(report => {
@@ -74,11 +74,11 @@ function buildHeatClusters(reports: Report[]) {
 
 // Map weight to colour using absolute thresholds
 function weightToColor(weight: number): string {
-  if (weight < 2)   return '#00C800'
-  if (weight < 4)   return '#FFFF00'
-  if (weight < 7)   return '#FF7E00'
-  if (weight < 12)  return '#FF0000'
-  return '#8B0000'
+  if (weight < 5)   return '#00C800'   // green  — up to 4 reports
+  if (weight < 10)  return '#FFFF00'   // yellow — 5-9 reports
+  if (weight < 20)  return '#FF7E00'   // orange — 10-19 reports
+  if (weight < 35)  return '#FF0000'   // red    — 20-34 reports
+  return '#8B0000'                      // dark red — 35+ reports
 }
 
 export default function MapScreen() {
@@ -157,7 +157,7 @@ export default function MapScreen() {
           <Text style={styles.headerSub}>{reports.length} reports</Text>
         </View>
         <View style={styles.webFallback}>
-          <Text style={styles.webFallbackIcon}>ðºï¸</Text>
+          <Text style={styles.webFallbackIcon}>Ã°ÂÂÂºÃ¯Â¸Â</Text>
           <Text style={styles.webFallbackText}>Map view requires the mobile app</Text>
         </View>
       </View>
@@ -174,7 +174,7 @@ export default function MapScreen() {
             onPress={() => setShowHeatmap(!showHeatmap)}
           >
             <Text style={[styles.heatmapToggleText, showHeatmap && styles.heatmapToggleTextActive]}>
-              ð¥ Heat
+              Ã°ÂÂÂ¥ Heat
             </Text>
           </TouchableOpacity>
           <Text style={styles.headerSub}>
@@ -207,7 +207,7 @@ export default function MapScreen() {
           )
         })}
 
-        {/* Crime pins â hidden in heat map mode */}
+        {/* Crime pins Ã¢ÂÂ hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
@@ -219,7 +219,7 @@ export default function MapScreen() {
               { backgroundColor: report.category_color },
               report.incident_type === 'attempted' && styles.markerAttempted,
             ]}>
-              <Text style={styles.markerText}>{ICON_MAP[report.category_icon] || 'ð'}</Text>
+              <Text style={styles.markerText}>{ICON_MAP[report.category_icon] || 'Ã°ÂÂÂ'}</Text>
             </View>
             <Callout tooltip>
               <View style={styles.callout}>
@@ -233,9 +233,9 @@ export default function MapScreen() {
                   </View>
                   <Text style={styles.calloutTitle}>{report.title}</Text>
                   <View style={styles.calloutMeta}>
-                    {report.address_suburb && <Text style={styles.calloutMetaText}>ð {report.address_suburb}</Text>}
+                    {report.address_suburb && <Text style={styles.calloutMetaText}>Ã°ÂÂÂ {report.address_suburb}</Text>}
                     <Text style={styles.calloutMetaText}>
-                      ð {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      Ã°ÂÂÂ {new Date(report.incident_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </Text>
                   </View>
                 </View>
@@ -275,7 +275,7 @@ export default function MapScreen() {
       <TouchableOpacity style={styles.locateButton} onPress={handleLocateMe} activeOpacity={0.85}>
         {locating
           ? <ActivityIndicator color={COLORS.textPrimary} size="small" />
-          : <Text style={styles.locateIcon}>â</Text>
+          : <Text style={styles.locateIcon}>Ã¢ÂÂ</Text>
         }
       </TouchableOpacity>
 
