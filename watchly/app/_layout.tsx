@@ -11,15 +11,11 @@ function NavigationGuard() {
 
   useEffect(() => {
     if (loading) return
-
     const inAuthGroup = segments[0] === '(auth)'
     const inTabsGroup = segments[0] === '(tabs)'
-
     if (session && inAuthGroup) {
-      // Logged in but on auth screen — go to app
       router.replace('/(tabs)/map')
     } else if (!session && inTabsGroup) {
-      // Not logged in but in app — go to login
       router.replace('/(auth)/login')
     }
   }, [session, loading, segments])
@@ -34,6 +30,9 @@ export default function RootLayout() {
       <NavigationGuard />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="terms" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
