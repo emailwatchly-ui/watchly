@@ -1,15 +1,15 @@
+import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet,
   TextInput, ActivityIndicator, Alert,
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native'
-import { useState } from 'react'
 import { useRouter } from 'expo-router'
+import * as AppleAuthentication from 'expo-apple-authentication'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
 
-// Google G logo built from coloured text segments
 function GoogleGLogo() {
   return (
     <View style={gStyles.container}>
@@ -25,41 +25,20 @@ function GoogleGLogo() {
 }
 
 const gStyles = {
-  container: {
-    width: 24, height: 24,
-    alignItems: 'center', justifyContent: 'center',
-    gap: 2,
-  },
-  gBlue: {
-    fontSize: 16, fontWeight: '800',
-    color: '#4285F4',
-    lineHeight: 18,
-    fontFamily: 'System',
-    letterSpacing: -0.5,
-  },
-  colourBar: {
-    flexDirection: 'row',
-    width: 16, height: 2.5,
-    borderRadius: 1.25,
-    overflow: 'hidden',
-  },
+  container: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  gBlue: { fontSize: 16, fontWeight: '800', color: '#4285F4', lineHeight: 18, fontFamily: 'System', letterSpacing: -0.5 },
+  colourBar: { flexDirection: 'row', width: 16, height: 2.5, borderRadius: 1.25, overflow: 'hidden' },
   barSegment: { flex: 1 },
 }
-
-// All emojis via codepoint to avoid encoding issues
-const SHIELD   = "\uD83D\uDEE1\uFE0F"  // shield
-const PIN      = "\uD83D\uDCCD"  // pin
-const MAP      = "\uD83D\uDDFA"  // map
-const CLOCK    = "\uD83D\uDD52"  // clock
-const LOCK     = "\uD83D\uDD12"  // lock
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth()
   const router = useRouter()
-  const [email, setEmail]       = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading] = useState(false)
   const [gLoading, setGLoading] = useState(false)
+  const [appleLoading, setAppleLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
 
   const handleEmailAuth = async () => {
@@ -95,6 +74,28 @@ export default function LoginScreen() {
     }
   }
 
+  const handleApple = async () => {
+    try {
+      setAppleLoading(true)
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken!,
+      })
+      if (error) throw error
+    } catch (err: any) {
+      if (err.code === 'ERR_REQUEST_CANCELED') return
+      Alert.alert('Sign in failed', err.message || 'Something went wrong.')
+    } finally {
+      setAppleLoading(false)
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -105,27 +106,22 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Top accent bar */}
         <View style={styles.accentBar} />
-
-        {/* Logo block */}
         <View style={styles.logoBlock}>
           <View style={styles.logoIconWrap}>
-            <Text style={styles.logoIconText}>{SHIELD}</Text>
+            <Text style={styles.logoIconText}>{"🛡️"}</Text>
           </View>
           <View>
             <Text style={styles.appName}>WATCHLY</Text>
             <Text style={styles.tagline}>COMMUNITY CRIME AWARENESS</Text>
           </View>
         </View>
-
-        {/* Feature pills */}
         <View style={styles.pillRow}>
           {[
-            { icon: PIN,   label: 'Pin reports' },
-            { icon: MAP,   label: 'Live map' },
-            { icon: CLOCK, label: 'History' },
-            { icon: LOCK,  label: 'Privacy' },
+            { icon: "📍", label: 'Pin reports' },
+            { icon: "🗺", label: 'Live map' },
+            { icon: "🕒", label: 'History' },
+            { icon: "🔒", label: 'Privacy' },
           ].map((p, i) => (
             <View key={i} style={styles.pill}>
               <Text style={styles.pillIcon}>{p.icon}</Text>
@@ -133,12 +129,19 @@ export default function LoginScreen() {
             </View>
           ))}
         </View>
-
-        {/* Auth card */}
         <View style={styles.card}>
           <Text style={styles.cardHeading}>
             {isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
           </Text>
+
+          {/* Sign in with Apple */}
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={12}
+            style={styles.appleBtn}
+            onPress={handleApple}
+          />
 
           {/* Google button */}
           <TouchableOpacity
@@ -156,14 +159,12 @@ export default function LoginScreen() {
             }
           </TouchableOpacity>
 
-          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Email input */}
           <View style={styles.inputWrap}>
             <Text style={styles.inputLabel}>EMAIL</Text>
             <TextInput
@@ -178,7 +179,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Password input */}
           <View style={styles.inputWrap}>
             <Text style={styles.inputLabel}>PASSWORD</Text>
             <TextInput
@@ -191,7 +191,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Primary CTA */}
           <TouchableOpacity
             style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
             onPress={handleEmailAuth}
@@ -206,11 +205,7 @@ export default function LoginScreen() {
             }
           </TouchableOpacity>
 
-          {/* Toggle */}
-          <TouchableOpacity
-            style={styles.toggleBtn}
-            onPress={() => setIsSignUp(!isSignUp)}
-          >
+          <TouchableOpacity style={styles.toggleBtn} onPress={() => setIsSignUp(!isSignUp)}>
             <Text style={styles.toggleText}>
               {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
               <Text style={styles.toggleTextHighlight}>
@@ -220,18 +215,17 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
         <View style={styles.legalRow}>
           <TouchableOpacity onPress={() => router.push('/terms')}>
             <Text style={styles.legalLink}>Terms</Text>
           </TouchableOpacity>
-          <Text style={styles.legalSep}>{"\u00B7"}</Text>
+          <Text style={styles.legalSep}>{"·"}</Text>
           <TouchableOpacity onPress={() => router.push('/privacy')}>
             <Text style={styles.legalLink}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.version}>WATCHLY v1.0 {"\u00B7"} AU</Text>
+        <Text style={styles.version}>WATCHLY v1.0 {"·"} AU</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -246,12 +240,13 @@ const styles = StyleSheet.create({
   logoIconText: { fontSize: 28 },
   appName: { fontSize: 32, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: 6, lineHeight: 36 },
   tagline: { fontSize: 9, color: COLORS.textMuted, letterSpacing: 2.5, marginTop: 2 },
-  pillRow: { flexDirection: 'row', flewWrap: 'wrap', gap: 8, marginBottom: 32 },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 32 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: '#2d3148', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
   pillIcon: { fontSize: 13 },
   pillLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary, letterSpacing: 0.5 },
   card: { backgroundColor: COLORS.bgCard, borderRadius: 20, borderWidth: 1, borderColor: '#2d3148', padding: 24, gap: 16 },
   cardHeading: { fontSize: 11, fontWeight: '800', color: COLORS.primary, letterSpacing: 2.5, marginBottom: 4 },
+  appleBtn: { width: '100%', height: 52 },
   googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 12, height: 52, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
   googleBtnText: { fontSize: 15, fontWeight: '600', color: '#1a1a2e', letterSpacing: 0.2 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -266,7 +261,6 @@ const styles = StyleSheet.create({
   toggleBtn: { alignItems: 'center', paddingVertical: 4 },
   toggleText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
   toggleTextHighlight: { color: COLORS.primary, fontWeight: '700' },
-  footer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center', marginTop: 24, lineHeight: 16 },
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
   legalLink: { fontSize: 12, color: COLORS.textMuted, textDecorationLine: 'underline' },
   legalSep: { fontSize: 12, color: COLORS.textMuted },
