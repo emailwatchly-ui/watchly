@@ -1,11 +1,31 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { Alert } from 'react-native'
+import { Alert, Platform } from 'react-native'
 import { Session, User } from '@supabase/supabase-js'
-import * as WebBrowser from 'expo-web-browser'
-import * as Linking from 'expo-linking'
 import { supabase } from '../lib/supabase'
 
-WebBrowser.maybeCompleteAuthSession()
+// Native Google Sign-In — works in standalone builds without web redirects
+let GoogleSignin: any = null
+let statusCodes: any = null
+try {
+  const gs = require('@react-native-google-signin/google-signin')
+  GoogleSignin = gs.GoogleSignin
+  statusCodes = gs.statusCodes
+} catch (e) {
+  // Not available in Expo Go
+}
+
+const WEB_CLIENT_ID = '128071343253-8ibt959omp4n15sugom9ru67j1ur0rql.apps.googleusercontent.com'
+const IOS_CLIENT_ID = '128071343253-cmbv7a3i62tv55voo1qn5vga8k6icl3l.apps.googleusercontent.com'
+
+// Configure Google Sign-In once
+if (GoogleSignin) {
+  GoogleSignin.configure({
+    webClientId: WEB_CLIENT_ID,
+    iosClientId: IOS_CLIENT_ID,
+    offlineAccess: false,
+    scopes: ['profile', 'email'],
+  })
+}
 
 type AuthContextType = {
   session: Session | null
@@ -29,84 +49,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
+    // Load initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Listen for auth state changes including OAuth callbacks
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    // Listen for ALL auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
+    )
 
     return () => subscription.unsubscribe()
   }, [])
 
   const signInWithGoogle = async () => {
-    try {
-      // Build the redirect URL using the app scheme
-      const redirectTo = Linking.createURL('auth/callback')
+    if (!GoogleSignin) {
+      Alert.alert(
+        'Not supported',
+        'Google Sign-In requires a standalone build. Please use email/password in Expo Go.'
+      )
+      return
+    }
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+    try {
+      // Ensure any previous sign-in is cleared
+      await GoogleSignin.signOut().catch(() => {})
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true })
+
+      // Trigger native Google Sign-In sheet
+      const signInResult = await GoogleSignin.signIn()
+
+      // Get the ID token
+      const { idToken } = await GoogleSignin.getTokens()
+
+      if (!idToken) {
+        throw new Error('No ID token returned from Google Sign-In')
+      }
+
+      // Exchange the Google ID token for a Supabase session
+      const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true,
-        },
+        token: idToken,
       })
 
       if (error) throw error
 
-      if (data?.url) {
-        // Open the OAuth URL in an in-app browser
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectTo,
-          { preferEphemeralSession: true }
-        )
-
-        if (result.type === 'success' && result.url) {
-          // Extract the code from the callback URL and exchange it for a session
-          const url = result.url
-
-          // Try PKCE code exchange first
-          try {
-            const { error: sessionError } = await supabase.auth.exchangeCodeForSession(url)
-            if (sessionError) throw sessionError
-          } catch {
-            // Fallback: parse tokens from URL hash or query params
-            const parsed = new URL(url)
-            const accessToken = parsed.searchParams.get('access_token') ||
-              new URLSearchParams(parsed.hash.replace('#', '')).get('access_token')
-            const refreshToken = parsed.searchParams.get('refresh_token') ||
-              new URLSearchParams(parsed.hash.replace('#', '')).get('refresh_token')
-
-            if (accessToken && refreshToken) {
-              await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              })
-            }
-          }
-
-          // Refresh session state
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session) {
-            setSession(session)
-            setUser(session.user)
-          }
-        }
+      // Session is set via onAuthStateChange listener above
+    } catch (error: any) {
+      if (statusCodes && error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled — no alert needed
+        return
       }
-    } catch (err: any) {
-      Alert.alert('Sign in failed', err.message || 'Something went wrong')
+      if (statusCodes && error.code === statusCodes.IN_PROGRESS) {
+        return
+      }
+      if (statusCodes && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services not available')
+        return
+      }
+      Alert.alert('Sign in failed', error.message || 'Something went wrong')
     }
   }
 
   const signOut = async () => {
+    if (GoogleSignin) {
+      await GoogleSignin.signOut().catch(() => {})
+    }
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
