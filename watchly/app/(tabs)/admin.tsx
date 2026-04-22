@@ -28,7 +28,9 @@ export default function AdminScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<'pending'|'approved'|'rejected'>('pending')
   const [isModerator, setIsModerator] = useState(false)
-  const [activeTab, setActiveTab] = useState<'reports'|'notify'>('reports')
+  const [activeTab, setActiveTab] = useState<'reports'|'notify'|'feedback'>('reports')
+  const [feedbackItems, setFeedbackItems] = useState<any[]>([])
+  const [feedbackFilter, setFeedbackFilter] = useState<'new'|'reviewed'|'resolved'>('new')
   const [notifTitle, setNotifTitle] = useState('')
   const [notifBody, setNotifBody] = useState('')
   const [sending, setSending] = useState(false)
@@ -38,6 +40,7 @@ export default function AdminScreen() {
     supabase.from('profiles').select('is_moderator').eq('id', user.id).single()
       .then(({ data }) => setIsModerator(data?.is_moderator || false))
     fetchReports()
+    fetchFeedback()
   }, [user, filter]))
 
   const fetchReports = async () => {
@@ -47,6 +50,19 @@ export default function AdminScreen() {
       .eq('status', filter).order('created_at', { ascending: false }).limit(50)
     if (!error && data) setReports(data)
     setLoading(false); setRefreshing(false)
+  }
+
+  const fetchFeedback = async () => {
+    const { data } = await supabase
+      .from('feedback').select('*')
+      .eq('status', feedbackFilter)
+      .order('created_at', { ascending: false }).limit(50)
+    if (data) setFeedbackItems(data)
+  }
+
+  const updateFeedbackStatus = async (id: string, status: 'reviewed'|'resolved') => {
+    await supabase.from('feedback').update({ status }).eq('id', id)
+    setFeedbackItems(prev => prev.filter(f => f.id !== id))
   }
 
   const updateStatus = async (id: string, status: 'approved'|'rejected') => {
@@ -121,6 +137,13 @@ export default function AdminScreen() {
             {BELL} NOTIFY
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.topTab, activeTab === 'feedback' && styles.topTabActive]}
+          onPress={() => { setActiveTab('feedback'); fetchFeedback() }}>
+          <Text style={[styles.topTabText, activeTab === 'feedback' && styles.topTabTextActive]}>
+            {"💬"} INBOX
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {activeTab === 'notify' ? (
@@ -167,6 +190,55 @@ export default function AdminScreen() {
               }
             </TouchableOpacity>
           </View>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      ) : activeTab === 'feedback' ? (
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.filterRow}>
+            {(['new','reviewed','resolved'] as const).map(f => (
+              <TouchableOpacity key={f}
+                style={[styles.filterTab, feedbackFilter === f && styles.filterTabActive]}
+                onPress={() => { setFeedbackFilter(f); fetchFeedback() }}>
+                <Text style={[styles.filterTabText, feedbackFilter === f && styles.filterTabTextActive]}>
+                  {f.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {feedbackItems.length === 0 ? (
+            <View style={[styles.center, { marginTop: 60 }]}>
+              <Text style={styles.emptyIcon}>{"📬"}</Text>
+              <Text style={styles.emptyText}>No {feedbackFilter} feedback</Text>
+            </View>
+          ) : (
+            feedbackItems.map(item => (
+              <View key={item.id} style={[styles.card, { marginHorizontal: 0 }]}>
+                <View style={[styles.cardAccent, { backgroundColor: item.type === 'bug' ? COLORS.primary : item.type === 'feedback' ? '#48bb78' : '#4299e1' }]} />
+                <View style={styles.cardBody}>
+                  <View style={styles.cardHeader}>
+                    <Text style={[styles.category, { color: item.type === 'bug' ? COLORS.primary : item.type === 'feedback' ? '#48bb78' : '#4299e1' }]}>
+                      {item.type.toUpperCase()}
+                    </Text>
+                    <Text style={styles.metaText}>
+                      {new Date(item.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
+                    </Text>
+                  </View>
+                  <Text style={styles.title}>{item.subject}</Text>
+                  <Text style={styles.description}>{item.message}</Text>
+                  {feedbackFilter === 'new' && (
+                    <View style={styles.actions}>
+                      <TouchableOpacity style={styles.approveBtn} onPress={() => updateFeedbackStatus(item.id, 'reviewed')}>
+                        <Text style={styles.approveBtnText}>{"✅"} Mark Reviewed</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.rejectBtn} onPress={() => updateFeedbackStatus(item.id, 'resolved')}>
+                        <Text style={styles.rejectBtnText}>{"❌"} Resolve</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
           <View style={{ height: 40 }} />
         </ScrollView>
       ) : (
