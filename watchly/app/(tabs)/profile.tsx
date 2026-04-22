@@ -136,18 +136,8 @@ export default function ProfileScreen() {
               <View style={styles.supportBtnInner}>
                 <Text style={styles.supportBtnIcon}>{"💬"}</Text>
                 <View style={styles.supportBtnText}>
-                  <Text style={styles.supportBtnTitle}>Send Feedback</Text>
-                  <Text style={styles.supportBtnSub}>Help us improve Watchly</Text>
-                </View>
-                <Text style={styles.supportBtnArrow}>{"›"}</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.supportBtn} onPress={() => router.push('/feedback')}>
-              <View style={styles.supportBtnInner}>
-                <Text style={styles.supportBtnIcon}>{"🐛"}</Text>
-                <View style={styles.supportBtnText}>
-                  <Text style={styles.supportBtnTitle}>Report a Bug</Text>
-                  <Text style={styles.supportBtnSub}>Something not working right?</Text>
+                  <Text style={styles.supportBtnTitle}>Feedback & Support</Text>
+                  <Text style={styles.supportBtnSub}>Send feedback or report an issue</Text>
                 </View>
                 <Text style={styles.supportBtnArrow}>{"›"}</Text>
               </View>
