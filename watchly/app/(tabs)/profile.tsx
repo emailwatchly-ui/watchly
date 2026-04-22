@@ -1,6 +1,6 @@
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, ActivityIndicator, Linking
+  ScrollView, Alert, ActivityIndicator
 } from 'react-native'
 import { useState, useCallback } from 'react'
 import { useRouter } from 'expo-router'
@@ -51,18 +51,6 @@ export default function ProfileScreen() {
 
   useFocusEffect(useCallback(() => { fetchData() }, [user]))
 
-  const handleFeedback = (type: 'feedback' | 'bug') => {
-    const subject = type === 'feedback'
-      ? encodeURIComponent('Watchly App Feedback')
-      : encodeURIComponent('Watchly Bug Report')
-    const body = type === 'feedback'
-      ? encodeURIComponent('Hi,\n\nI have the following feedback about Watchly:\n\n')
-      : encodeURIComponent('Hi,\n\nI would like to report the following issue:\n\nDevice: iOS\nApp Version: 1.0\n\nDescription:\n\n')
-    const mailto = `mailto:emailwatchly@gmail.com?subject=${subject}&body=${body}`
-    Linking.openURL(mailto).catch(() =>
-      Alert.alert('Error', 'Could not open mail app. Please email emailwatchly@gmail.com directly.')
-    )
-  }
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure?', [
@@ -144,7 +132,7 @@ export default function ProfileScreen() {
           {/* Feedback & Support */}
           <View style={styles.supportSection}>
             <Text style={styles.supportLabel}>SUPPORT</Text>
-            <TouchableOpacity style={styles.supportBtn} onPress={() => handleFeedback('feedback')}>
+            <TouchableOpacity style={styles.supportBtn} onPress={() => router.push('/feedback')}>
               <View style={styles.supportBtnInner}>
                 <Text style={styles.supportBtnIcon}>{"💬"}</Text>
                 <View style={styles.supportBtnText}>
@@ -154,7 +142,7 @@ export default function ProfileScreen() {
                 <Text style={styles.supportBtnArrow}>{"›"}</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.supportBtn} onPress={() => handleFeedback('bug')}>
+            <TouchableOpacity style={styles.supportBtn} onPress={() => router.push('/feedback')}>
               <View style={styles.supportBtnInner}>
                 <Text style={styles.supportBtnIcon}>{"🐛"}</Text>
                 <View style={styles.supportBtnText}>
