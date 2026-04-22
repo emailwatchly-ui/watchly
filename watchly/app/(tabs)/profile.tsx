@@ -74,10 +74,12 @@ export default function ProfileScreen() {
                     try {
                       const { data: { session } } = await supabase.auth.getSession()
                       if (!session) return
-                      // Delete user data first
-                      await supabase.from('push_tokens').delete().eq('user_id', session.user.id)
-                      await supabase.from('feedback').delete().eq('user_id', session.user.id)
-                      // Sign out — account deletion handled server-side via Supabase
+                      // Call server-side delete edge function
+                      const res = await fetch(
+                        'https://epjusywewvbjhqvoulmy.supabase.co/functions/v1/delete-account',
+                        { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token } }
+                      )
+                      if (!res.ok) throw new Error('Deletion failed')
                       await supabase.auth.signOut()
                       router.replace('/(auth)/login')
                     } catch (err: any) {
