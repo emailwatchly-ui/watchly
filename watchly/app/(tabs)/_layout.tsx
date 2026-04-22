@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router'
-import { Text, View, useEffect, useState } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Text, View } from 'react-native'
 import { COLORS } from '../../constants'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
