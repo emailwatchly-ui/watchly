@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native'
 import { useState } from 'react'
+import { useRouter } from 'expo-router'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
@@ -19,6 +20,7 @@ const GLOBE    = String.fromCodePoint(0x1F310)  // globe
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth()
+  const router = useRouter()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
@@ -184,9 +186,15 @@ export default function LoginScreen() {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footer}>
-          By continuing you agree to report crimes responsibly
-        </Text>
+        <View style={styles.legalRow}>
+          <TouchableOpacity onPress={() => router.push('/terms')}>
+            <Text style={styles.legalLink}>Terms</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSep}>{String.fromCodePoint(0x00B7)}</Text>
+          <TouchableOpacity onPress={() => router.push('/privacy')}>
+            <Text style={styles.legalLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.version}>WATCHLY v1.0 {String.fromCodePoint(0x00B7)} AU</Text>
       </ScrollView>
@@ -225,5 +233,8 @@ const styles = StyleSheet.create({
   toggleText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
   toggleTextHighlight: { color: COLORS.primary, fontWeight: '700' },
   footer: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center', marginTop: 24, lineHeight: 16 },
+  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
+  legalLink: { fontSize: 12, color: COLORS.textMuted, textDecorationLine: 'underline' },
+  legalSep: { fontSize: 12, color: COLORS.textMuted },
   version: { fontSize: 9, color: '#2d3148', textAlign: 'center', letterSpacing: 3, marginTop: 16 },
 })
