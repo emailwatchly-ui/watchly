@@ -9,13 +9,37 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
 
+// Google G logo built from coloured text segments
+function GoogleGLogo() {
+  return (
+    <View style={gStyles.container}>
+      <View style={gStyles.ring}>
+        <Text style={[gStyles.segment, gStyles.blue]}>G</Text>
+      </View>
+    </View>
+  )
+}
+
+const gStyles = {
+  container: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
+  ring: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 2.5,
+    borderColor: '#4285F4',
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  segment: { fontSize: 13, fontWeight: '700', lineHeight: 16 },
+  blue: { color: '#4285F4' },
+}
+
 // All emojis via codepoint to avoid encoding issues
 const SHIELD   = "\uD83D\uDEE1\uFE0F"  // shield
 const PIN      = "\uD83D\uDCCD"  // pin
 const MAP      = "\uD83D\uDDFA"  // map
 const CLOCK    = "\uD83D\uDD52"  // clock
 const LOCK     = "\uD83D\uDD12"  // lock
-const GLOBE    = "\uD83C\uDF10"  // globe
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth()
@@ -114,7 +138,7 @@ export default function LoginScreen() {
             {gLoading
               ? <ActivityIndicator color="#1a1d27" size="small" />
               : <>
-                  <Text style={styles.googleBtnIcon}>{GLOBE}</Text>
+                  <GoogleGLogo />
                   <Text style={styles.googleBtnText}>Continue with Google</Text>
                 </>
             }
@@ -217,7 +241,6 @@ const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.bgCard, borderRadius: 20, borderWidth: 1, borderColor: '#2d3148', padding: 24, gap: 16 },
   cardHeading: { fontSize: 11, fontWeight: '800', color: COLORS.primary, letterSpacing: 2.5, marginBottom: 4 },
   googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 12, height: 52, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
-  googleBtnIcon: { fontSize: 18 },
   googleBtnText: { fontSize: 15, fontWeight: '600', color: '#1a1a2e', letterSpacing: 0.2 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#2d3148' },
