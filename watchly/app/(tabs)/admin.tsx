@@ -3,7 +3,7 @@ import {
   ScrollView, Alert, ActivityIndicator, RefreshControl
 } from 'react-native'
 import { useState, useEffect, useCallback } from 'react'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect } from 'expo-router'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
