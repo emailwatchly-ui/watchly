@@ -4,7 +4,7 @@ import {
 } from 'react-native'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'expo-router'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect } from 'expo-router'
 import * as Location from 'expo-location'
 import { supabase } from '../../lib/supabase'
 import { COLORS, CANBERRA_REGION } from '../../constants'
