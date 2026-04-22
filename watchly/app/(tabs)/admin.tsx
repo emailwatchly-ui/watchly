@@ -8,9 +8,9 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
 
-const TICK  = String.fromCodePoint(0x2705)
-const CROSS = String.fromCodePoint(0x274C)
-const CLOCK = String.fromCodePoint(0x23F3)
+const TICK  = "\u2705"
+const CROSS = "\u274C"
+const CLOCK = "\u23F3"
 
 type Report = {
   id: string; title: string; description: string | null
@@ -62,7 +62,7 @@ export default function AdminScreen() {
   if (!isModerator) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyIcon}>{String.fromCodePoint(0x1F512)}</Text>
+        <Text style={styles.emptyIcon}>{"\uD83D\uDD12"}</Text>
         <Text style={styles.emptyText}>Moderator access required</Text>
       </View>
     )
@@ -116,13 +116,13 @@ export default function AdminScreen() {
                 )}
                 <View style={styles.meta}>
                   {report.address_suburb && (
-                    <Text style={styles.metaText}>{String.fromCodePoint(0x1F4CD)} {report.address_suburb}</Text>
+                    <Text style={styles.metaText}>{"\uD83D\uDCCD"} {report.address_suburb}</Text>
                   )}
                   <Text style={styles.metaText}>
-                    {String.fromCodePoint(0x1F5D3)} {new Date(report.incident_date).toLocaleDateString('en-AU')}
+                    {"\uD83D\uDDD3\uFE0F"} {new Date(report.incident_date).toLocaleDateString('en-AU')}
                   </Text>
                   <Text style={styles.metaText}>
-                    {String.fromCodePoint(0x1F464)} {report.reporter_name || 'Anonymous'}
+                    {"\uD83D\uDC64"} {report.reporter_name || 'Anonymous'}
                   </Text>
                   <Text style={styles.metaText}>
                     {CLOCK} {new Date(report.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
