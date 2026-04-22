@@ -53,7 +53,7 @@ export default function FeedbackScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backText}>{'←'} Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>FEEDBACK</Text>
+          <Text style={styles.headerTitle}>FEEDBACK & SUPPORT</Text>
           <View style={{ width: 60 }} />
         </View>
         <View style={styles.successContainer}>
@@ -79,7 +79,7 @@ export default function FeedbackScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backText}>{'←'} Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>FEEDBACK</Text>
+        <Text style={styles.headerTitle}>FEEDBACK & SUPPORT</Text>
         <View style={{ width: 60 }} />
       </View>
 
