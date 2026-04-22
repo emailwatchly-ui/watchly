@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { COLORS } from '../constants'
 
@@ -12,15 +13,22 @@ const SLIDES = [
 
 export default function OnboardingScreen() {
   const [current, setCurrent] = useState(0)
+  const router = useRouter()
   const isLast = current === SLIDES.length - 1
   const slide = SLIDES[current]
 
   const finish = async () => {
     await AsyncStorage.setItem('onboarding_complete', 'true')
-    // NavigationGuard detects the change and navigates — no router call needed
+    router.replace('/(auth)/login')
   }
 
-  const next = () => { if (isLast) { finish() } else { setCurrent(current + 1) } }
+  const next = () => {
+    if (isLast) {
+      finish()
+    } else {
+      setCurrent(current + 1)
+    }
+  }
 
   return (
     <View style={styles.container}>
