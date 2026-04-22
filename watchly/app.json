@@ -47,6 +47,12 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Watchly needs your location to show crime reports near you."
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.128071343253-cmbv7a3i62tv55voo1qn5vga8k6icl3l"
+        }
       ]
     ],
     "experiments": {
