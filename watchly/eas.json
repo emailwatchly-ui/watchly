@@ -38,6 +38,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "emailwatchly@gmail.com",
+        "ascAppId": "",
+        "appleTeamId": "855NY4FM66"
+      }
+    }
   }
 }
