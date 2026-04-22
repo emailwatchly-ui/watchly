@@ -60,17 +60,23 @@ export async function registerForPushNotifications(userId: string) {
       projectId: '760a7834-2c24-4c92-9f3f-5fcd4cc44480',
     })
 
+    console.log('[Notifications] Got push token:', expoPushToken)
     if (expoPushToken) {
       // Upsert token to Supabase
-      await supabase.from('push_tokens').upsert(
-        { user_id: userId, token: expoPushToken, platform: Platform.OS, updated_at: new Date().toISOString() },
-        { onConflict: 'token' }
-      )
+      // Delete old token for this user first, then insert fresh
+      await supabase.from('push_tokens').delete().eq('user_id', userId)
+      await supabase.from('push_tokens').insert({
+        user_id: userId,
+        token: expoPushToken,
+        platform: Platform.OS,
+        updated_at: new Date().toISOString()
+      })
     }
 
+    console.log('[Notifications] Token saved to Supabase')
     return expoPushToken
   } catch (err) {
-    console.error('Push token error:', err)
+    console.error('[Notifications] Push token error:', err)
     return null
   }
 }
