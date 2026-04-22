@@ -1,6 +1,6 @@
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, ActivityIndicator
+  ScrollView, Alert, ActivityIndicator, Linking
 } from 'react-native'
 import { useState, useCallback } from 'react'
 import { useRouter } from 'expo-router'
@@ -50,6 +50,19 @@ export default function ProfileScreen() {
   }
 
   useFocusEffect(useCallback(() => { fetchData() }, [user]))
+
+  const handleFeedback = (type: 'feedback' | 'bug') => {
+    const subject = type === 'feedback'
+      ? encodeURIComponent('Watchly App Feedback')
+      : encodeURIComponent('Watchly Bug Report')
+    const body = type === 'feedback'
+      ? encodeURIComponent('Hi,\n\nI have the following feedback about Watchly:\n\n')
+      : encodeURIComponent('Hi,\n\nI would like to report the following issue:\n\nDevice: iOS\nApp Version: 1.0\n\nDescription:\n\n')
+    const mailto = `mailto:emailwatchly@gmail.com?subject=${subject}&body=${body}`
+    Linking.openURL(mailto).catch(() =>
+      Alert.alert('Error', 'Could not open mail app. Please email emailwatchly@gmail.com directly.')
+    )
+  }
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure?', [
@@ -128,6 +141,31 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           )}
+          {/* Feedback & Support */}
+          <View style={styles.supportSection}>
+            <Text style={styles.supportLabel}>SUPPORT</Text>
+            <TouchableOpacity style={styles.supportBtn} onPress={() => handleFeedback('feedback')}>
+              <View style={styles.supportBtnInner}>
+                <Text style={styles.supportBtnIcon}>{"💬"}</Text>
+                <View style={styles.supportBtnText}>
+                  <Text style={styles.supportBtnTitle}>Send Feedback</Text>
+                  <Text style={styles.supportBtnSub}>Help us improve Watchly</Text>
+                </View>
+                <Text style={styles.supportBtnArrow}>{"›"}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.supportBtn} onPress={() => handleFeedback('bug')}>
+              <View style={styles.supportBtnInner}>
+                <Text style={styles.supportBtnIcon}>{"🐛"}</Text>
+                <View style={styles.supportBtnText}>
+                  <Text style={styles.supportBtnTitle}>Report a Bug</Text>
+                  <Text style={styles.supportBtnSub}>Something not working right?</Text>
+                </View>
+                <Text style={styles.supportBtnArrow}>{"›"}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.legalRow}>
             <TouchableOpacity onPress={() => router.push('/privacy')}>
               <Text style={styles.legalLink}>Privacy Policy</Text>
@@ -194,6 +232,36 @@ const styles = StyleSheet.create({
     gap: 8, paddingHorizontal: 24, marginTop: 16 },
   legalLink: { fontSize: 12, color: COLORS.textMuted, textDecorationLine: 'underline' },
   legalSep: { fontSize: 12, color: COLORS.textMuted },
+  supportSection: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  supportLabel: {
+    fontSize: 10, fontWeight: '800', color: COLORS.primary,
+    letterSpacing: 2, marginBottom: 4,
+  },
+  supportBtn: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 12,
+    borderWidth: 1, borderColor: '#2d3148',
+  },
+  supportBtnInner: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 14, gap: 12,
+  },
+  supportBtnIcon: { fontSize: 22 },
+  supportBtnText: { flex: 1, gap: 2 },
+  supportBtnTitle: {
+    fontSize: 15, fontWeight: '600', color: COLORS.textPrimary,
+  },
+  supportBtnSub: {
+    fontSize: 12, color: COLORS.textMuted,
+  },
+  supportBtnArrow: {
+    fontSize: 20, color: COLORS.textMuted, fontWeight: '300',
+  },
   signOutBtn: { margin: 20, marginTop: 12, borderWidth: 1, borderColor: COLORS.primary,
     borderRadius: 12, height: 50, alignItems: 'center', justifyContent: 'center' },
   signOutText: { fontSize: 13, fontWeight: '800', color: COLORS.primary, letterSpacing: 2 },
