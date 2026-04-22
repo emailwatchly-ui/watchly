@@ -15,7 +15,6 @@ const PIN      = "\uD83D\uDCCD"  // pin
 const MAP      = "\uD83D\uDDFA"  // map
 const CLOCK    = "\uD83D\uDD52"  // clock
 const LOCK     = "\uD83D\uDD12"  // lock
-const GOOGLE_G = String.fromCodePoint(0x1D50C)  // stylised G (fallback to globe)
 const GLOBE    = "\uD83C\uDF10"  // globe
 
 export default function LoginScreen() {
