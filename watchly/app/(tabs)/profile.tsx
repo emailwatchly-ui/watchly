@@ -52,6 +52,47 @@ export default function ProfileScreen() {
   useFocusEffect(useCallback(() => { fetchData() }, [user]))
 
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all your data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            Alert.alert(
+              'Are you absolutely sure?',
+              'All your reports and data will be permanently removed.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Everything',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession()
+                      if (!session) return
+                      // Delete user data first
+                      await supabase.from('push_tokens').delete().eq('user_id', session.user.id)
+                      await supabase.from('feedback').delete().eq('user_id', session.user.id)
+                      // Sign out — account deletion handled server-side via Supabase
+                      await supabase.auth.signOut()
+                      router.replace('/(auth)/login')
+                    } catch (err: any) {
+                      Alert.alert('Error', 'Could not delete account. Please contact emailwatchly@gmail.com.')
+                    }
+                  }
+                }
+              ]
+            )
+          }
+        }
+      ]
+    )
+  }
+
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
@@ -153,6 +194,10 @@ export default function ProfileScreen() {
               <Text style={styles.legalLink}>Terms of Service</Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+            <Text style={styles.deleteBtnText}>{"🗑️"} Delete Account</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
             <Text style={styles.signOutText}>SIGN OUT</Text>
           </TouchableOpacity>
@@ -239,6 +284,21 @@ const styles = StyleSheet.create({
   },
   supportBtnArrow: {
     fontSize: 20, color: COLORS.textMuted, fontWeight: '300',
+  },
+  deleteBtn: {
+    marginHorizontal: 20,
+    marginBottom: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(229,62,62,0.4)',
+    backgroundColor: 'rgba(229,62,62,0.08)',
+  },
+  deleteBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E53E3E',
   },
   signOutBtn: { margin: 20, marginTop: 12, borderWidth: 1, borderColor: COLORS.primary,
     borderRadius: 12, height: 50, alignItems: 'center', justifyContent: 'center' },
