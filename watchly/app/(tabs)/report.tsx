@@ -12,8 +12,8 @@ import { COLORS, LOCATION_MASK_RADIUS_M } from '../../constants'
 type Category = { id: string; name: string; icon: string; color: string }
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  home: '🏠', car: '🚗', 'alert-triangle': '⚠️', 'dollar-sign': '💰',
-  tool: '🔧', package: '📦', eye: '👁', activity: '💊', 'more-horizontal': '📋',
+  home: 'ð ', car: 'ð', 'alert-triangle': 'â ï¸', 'dollar-sign': 'ð°',
+  tool: 'ð§', package: 'ð¦', eye: 'ð', activity: 'ð', 'more-horizontal': 'ð',
 }
 
 export default function ReportScreen() {
@@ -83,7 +83,7 @@ export default function ReportScreen() {
         setLocation({ lat: results[0].latitude, lng: results[0].longitude })
         setSuburb(manualSuburb || manualAddress)
         setStep(Math.max(step, 3))
-        Alert.alert('Address found ✅', `Pinned at: ${manualAddress}`)
+        Alert.alert('Address found â', `Pinned at: ${manualAddress}`)
       } else {
         Alert.alert('Address not found', 'Try adding a suburb or state to help narrow it down.')
       }
@@ -107,6 +107,12 @@ export default function ReportScreen() {
     if (!location) return Alert.alert('Required', 'Please set the location of the incident.')
     setSubmitting(true)
     try {
+      // Rate limit check — max 5 reports per 24 hours
+      const { data: rateOk } = await supabase.rpc('check_report_rate_limit', { user_uuid: user?.id })
+      if (!rateOk) {
+        setSubmitting(false)
+        return Alert.alert('Limit reached', 'You can submit up to 5 reports per day. Please try again tomorrow.')
+      }
       const displayLocation = maskLocation ? maskCoordinates(location.lat, location.lng) : location
       const { error } = await supabase.from('crime_reports').insert({
         user_id: user?.id,
@@ -121,7 +127,7 @@ export default function ReportScreen() {
         incident_date: new Date().toISOString().split('T')[0],
       })
       if (error) throw error
-      Alert.alert('Report submitted ✅', 'Thank you for keeping your community safe.', [
+      Alert.alert('Report submitted â', 'Thank you for keeping your community safe.', [
         { text: 'View Map', onPress: () => router.push('/(tabs)/map') },
       ])
       setSelectedCategory(null); setTitle(''); setDescription('')
@@ -149,7 +155,7 @@ export default function ReportScreen() {
 
         {/* STEP 1: Category */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>01 — CRIME TYPE</Text>
+          <Text style={styles.sectionLabel}>01 â CRIME TYPE</Text>
           <View style={styles.categoryGrid}>
             {categories.map(cat => (
               <TouchableOpacity
@@ -161,7 +167,7 @@ export default function ReportScreen() {
                 ]}
                 onPress={() => { setSelectedCategory(cat.id); setStep(Math.max(step, 2)) }}
               >
-                <Text style={styles.categoryEmoji}>{CATEGORY_EMOJI[cat.icon] || '📋'}</Text>
+                <Text style={styles.categoryEmoji}>{CATEGORY_EMOJI[cat.icon] || 'ð'}</Text>
                 <Text style={[styles.categoryText, selectedCategory === cat.id && { color: cat.color }]}>
                   {cat.name}
                 </Text>
@@ -174,7 +180,7 @@ export default function ReportScreen() {
           <>
             {/* STEP 2: Details */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>02 — INCIDENT DETAILS</Text>
+              <Text style={styles.sectionLabel}>02 â INCIDENT DETAILS</Text>
               <View style={styles.typeToggle}>
                 <TouchableOpacity
                   style={[styles.typeButton, incidentType === 'committed' && styles.typeButtonActive]}
@@ -215,7 +221,7 @@ export default function ReportScreen() {
 
             {/* STEP 3: Location */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>03 — LOCATION</Text>
+              <Text style={styles.sectionLabel}>03 â LOCATION</Text>
 
               {/* Mode toggle */}
               <View style={styles.modeToggle}>
@@ -224,7 +230,7 @@ export default function ReportScreen() {
                   onPress={() => setLocationMode('gps')}
                 >
                   <Text style={[styles.modeButtonText, locationMode === 'gps' && styles.modeButtonTextActive]}>
-                    📍 Use GPS
+                    ð Use GPS
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -232,7 +238,7 @@ export default function ReportScreen() {
                   onPress={() => setLocationMode('manual')}
                 >
                   <Text style={[styles.modeButtonText, locationMode === 'manual' && styles.modeButtonTextActive]}>
-                    ⌨️ Enter Address
+                    â¨ï¸ Enter Address
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -246,10 +252,10 @@ export default function ReportScreen() {
                   {locationLoading
                     ? <ActivityIndicator color={COLORS.primary} size="small" />
                     : <>
-                        <Text style={styles.locationIcon}>{location ? '✅' : '📍'}</Text>
+                        <Text style={styles.locationIcon}>{location ? 'â' : 'ð'}</Text>
                         <Text style={styles.locationText}>
                           {location
-                            ? `Pinned${suburb ? ` — ${suburb}` : ''}`
+                            ? `Pinned${suburb ? ` â ${suburb}` : ''}`
                             : 'Use my current GPS location'}
                         </Text>
                       </>
@@ -281,7 +287,7 @@ export default function ReportScreen() {
                     {geocoding
                       ? <ActivityIndicator color="#fff" size="small" />
                       : <Text style={styles.geocodeButtonText}>
-                          {location ? '✅ Address Pinned — Update' : 'PIN THIS ADDRESS'}
+                          {location ? 'â Address Pinned â Update' : 'PIN THIS ADDRESS'}
                         </Text>
                     }
                   </TouchableOpacity>
