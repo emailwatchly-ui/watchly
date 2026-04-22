@@ -45,21 +45,21 @@ const FILTER_RANGES = [
 
 // Emoji map using String.fromCodePoint to avoid encoding issues
 const ICON_MAP: Record<string, string> = {
-  home:             String.fromCodePoint(0x1F3E0), // house
-  car:              String.fromCodePoint(0x1F697), // car
-  'alert-triangle': String.fromCodePoint(0x26A0),  // warning
-  'dollar-sign':    String.fromCodePoint(0x1F4B0), // money bag
-  tool:             String.fromCodePoint(0x1F527), // wrench
-  package:          String.fromCodePoint(0x1F4E6), // package
-  eye:              String.fromCodePoint(0x1F441), // eye
-  activity:         String.fromCodePoint(0x1F48A), // pill
-  'more-horizontal':String.fromCodePoint(0x1F4CB), // clipboard
+  home:             "\uD83C\uDFE0", // house
+  car:              "\uD83D\uDE97", // car
+  'alert-triangle': "\u26A0\uFE0F",  // warning
+  'dollar-sign':    "\uD83D\uDCB0", // money bag
+  tool:             "\uD83D\uDD27", // wrench
+  package:          "\uD83D\uDCE6", // package
+  eye:              "\uD83D\uDC41\uFE0F", // eye
+  activity:         "\uD83D\uDC8A", // pill
+  'more-horizontal':"\uD83D\uDCCB", // clipboard
 }
 
-const FIRE_EMOJI    = String.fromCodePoint(0x1F525) // fire
-const PIN_EMOJI     = String.fromCodePoint(0x1F4CD) // pin
-const CAL_EMOJI     = String.fromCodePoint(0x1F5D3) // calendar
-const CIRCLE_EMOJI  = String.fromCodePoint(0x25CE)  // target circle (locate button)
+const FIRE_EMOJI    = "\uD83D\uDD25" // fire
+const PIN_EMOJI     = "\uD83D\uDCCD" // pin
+const CAL_EMOJI     = "\uD83D\uDDD3\uFE0F" // calendar
+const CIRCLE_EMOJI  = "\u25CE"  // target circle (locate button)
 
 // Cluster nearby reports and calculate density
 function buildHeatClusters(reports: Report[]) {
@@ -84,13 +84,13 @@ function buildHeatClusters(reports: Report[]) {
   return clusters
 }
 
-// Absolute thresholds ÃÂ¢ÃÂÃÂ only turns red with serious crime density
+// Absolute thresholds ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ only turns red with serious crime density
 function weightToColor(weight: number): string {
-  if (weight < 5)  return '#00C800' // green  ÃÂ¢ÃÂÃÂ 1-4 reports
-  if (weight < 10) return '#FFFF00' // yellow ÃÂ¢ÃÂÃÂ 5-9 reports
-  if (weight < 20) return '#FF7E00' // orange ÃÂ¢ÃÂÃÂ 10-19 reports
-  if (weight < 35) return '#FF0000' // red    ÃÂ¢ÃÂÃÂ 20-34 reports
-  return '#8B0000'                   // dark red ÃÂ¢ÃÂÃÂ 35+ reports
+  if (weight < 5)  return '#00C800' // green  ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 1-4 reports
+  if (weight < 10) return '#FFFF00' // yellow ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 5-9 reports
+  if (weight < 20) return '#FF7E00' // orange ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 10-19 reports
+  if (weight < 35) return '#FF0000' // red    ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 20-34 reports
+  return '#8B0000'                   // dark red ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 35+ reports
 }
 
 export default function MapScreen() {
@@ -172,7 +172,7 @@ export default function MapScreen() {
           <Text style={styles.headerSub}>{reports.length} reports</Text>
         </View>
         <View style={styles.webFallback}>
-          <Text style={styles.webFallbackIcon}>{String.fromCodePoint(0x1F5FA)}</Text>
+          <Text style={styles.webFallbackIcon}>{"\uD83D\uDDFA"}</Text>
           <Text style={styles.webFallbackText}>Map view requires the mobile app</Text>
         </View>
       </View>
@@ -225,7 +225,7 @@ export default function MapScreen() {
           )
         })}
 
-        {/* Crime pins ÃÂ¢ÃÂÃÂ hidden in heat map mode */}
+        {/* Crime pins ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
@@ -312,7 +312,7 @@ export default function MapScreen() {
         }
       </TouchableOpacity>
 
-      {/* FAB ÃÂ¢ÃÂÃÂ add report */}
+      {/* FAB ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ add report */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/(tabs)/report')}
