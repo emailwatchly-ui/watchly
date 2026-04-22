@@ -59,9 +59,9 @@ export default function ProfileScreen() {
   }
 
   const statusColor = (s: string) => s === 'approved' ? '#48bb78' : s === 'pending' ? '#ecc94b' : s === 'rejected' ? COLORS.primary : COLORS.textMuted
-  const PIN = String.fromCodePoint(0x1F4CD)
-  const CAL = String.fromCodePoint(0x1F5D3)
-  const SHIELD = String.fromCodePoint(0x1F6E1)
+  const PIN = "\uD83D\uDCCD"
+  const CAL = "\uD83D\uDDD3\uFE0F"
+  const SHIELD = "\uD83D\uDEE1\uFE0F"
 
   return (
     <View style={styles.container}>
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => router.push('/privacy')}>
               <Text style={styles.legalLink}>Privacy Policy</Text>
             </TouchableOpacity>
-            <Text style={styles.legalSep}>{String.fromCodePoint(0x00B7)}</Text>
+            <Text style={styles.legalSep}>{"\u00B7"}</Text>
             <TouchableOpacity onPress={() => router.push('/terms')}>
               <Text style={styles.legalLink}>Terms of Service</Text>
             </TouchableOpacity>
@@ -140,7 +140,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
             <Text style={styles.signOutText}>SIGN OUT</Text>
           </TouchableOpacity>
-          <Text style={styles.version}>WATCHLY v1.0 {String.fromCodePoint(0x00B7)} AU</Text>
+          <Text style={styles.version}>WATCHLY v1.0 {"\u00B7"} AU</Text>
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
