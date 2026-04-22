@@ -13,25 +13,37 @@ import { COLORS } from '../../constants'
 function GoogleGLogo() {
   return (
     <View style={gStyles.container}>
-      <View style={gStyles.ring}>
-        <Text style={[gStyles.segment, gStyles.blue]}>G</Text>
+      <Text style={gStyles.gBlue}>G</Text>
+      <View style={gStyles.colourBar}>
+        <View style={[gStyles.barSegment, { backgroundColor: '#4285F4' }]} />
+        <View style={[gStyles.barSegment, { backgroundColor: '#EA4335' }]} />
+        <View style={[gStyles.barSegment, { backgroundColor: '#FBBC05' }]} />
+        <View style={[gStyles.barSegment, { backgroundColor: '#34A853' }]} />
       </View>
     </View>
   )
 }
 
 const gStyles = {
-  container: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
-  ring: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 2.5,
-    borderColor: '#4285F4',
+  container: {
+    width: 24, height: 24,
     alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
+    gap: 2,
   },
-  segment: { fontSize: 13, fontWeight: '700', lineHeight: 16 },
-  blue: { color: '#4285F4' },
+  gBlue: {
+    fontSize: 16, fontWeight: '800',
+    color: '#4285F4',
+    lineHeight: 18,
+    fontFamily: 'System',
+    letterSpacing: -0.5,
+  },
+  colourBar: {
+    flexDirection: 'row',
+    width: 16, height: 2.5,
+    borderRadius: 1.25,
+    overflow: 'hidden',
+  },
+  barSegment: { flex: 1 },
 }
 
 // All emojis via codepoint to avoid encoding issues
