@@ -10,13 +10,13 @@ import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
 
 // All emojis via codepoint to avoid encoding issues
-const SHIELD   = String.fromCodePoint(0x1F6E1)  // shield
-const PIN      = String.fromCodePoint(0x1F4CD)  // pin
-const MAP      = String.fromCodePoint(0x1F5FA)  // map
-const CLOCK    = String.fromCodePoint(0x1F552)  // clock
-const LOCK     = String.fromCodePoint(0x1F512)  // lock
+const SHIELD   = "\uD83D\uDEE1\uFE0F"  // shield
+const PIN      = "\uD83D\uDCCD"  // pin
+const MAP      = "\uD83D\uDDFA"  // map
+const CLOCK    = "\uD83D\uDD52"  // clock
+const LOCK     = "\uD83D\uDD12"  // lock
 const GOOGLE_G = String.fromCodePoint(0x1D50C)  // stylised G (fallback to globe)
-const GLOBE    = String.fromCodePoint(0x1F310)  // globe
+const GLOBE    = "\uD83C\uDF10"  // globe
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth()
@@ -190,13 +190,13 @@ export default function LoginScreen() {
           <TouchableOpacity onPress={() => router.push('/terms')}>
             <Text style={styles.legalLink}>Terms</Text>
           </TouchableOpacity>
-          <Text style={styles.legalSep}>{String.fromCodePoint(0x00B7)}</Text>
+          <Text style={styles.legalSep}>{"\u00B7"}</Text>
           <TouchableOpacity onPress={() => router.push('/privacy')}>
             <Text style={styles.legalLink}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.version}>WATCHLY v1.0 {String.fromCodePoint(0x00B7)} AU</Text>
+        <Text style={styles.version}>WATCHLY v1.0 {"\u00B7"} AU</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   )
