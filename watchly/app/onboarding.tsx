@@ -5,10 +5,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { COLORS } from '../constants'
 
 const SLIDES = [
-  { icon: String.fromCodePoint(0x1F6E1), title: 'Welcome to Watchly', subtitle: 'COMMUNITY CRIME AWARENESS', body: 'Help keep your community safe by reporting and tracking crime incidents in your area.' },
-  { icon: String.fromCodePoint(0x1F5FA), title: 'Live Crime Map', subtitle: "SEE WHAT'S HAPPENING NEARBY", body: 'Browse an interactive map showing recent crime reports. Switch to heat map view to spot hotspot areas instantly.' },
-  { icon: String.fromCodePoint(0x1F4CD), title: 'Report Incidents', subtitle: 'QUICK AND EASY REPORTING', body: 'Submit reports in seconds. Choose a category, describe what happened, and pin the location with optional privacy masking.' },
-  { icon: String.fromCodePoint(0x1F512), title: 'Your Privacy Matters', subtitle: 'REPORT SAFELY', body: 'Enable location masking to offset your pin by ~75m. All reports are reviewed before appearing on the map.' },
+  { icon: "\uD83D\uDEE1\uFE0F", title: 'Welcome to Watchly', subtitle: 'COMMUNITY CRIME AWARENESS', body: 'Help keep your community safe by reporting and tracking crime incidents in your area.' },
+  { icon: "\uD83D\uDDFA", title: 'Live Crime Map', subtitle: "SEE WHAT'S HAPPENING NEARBY", body: 'Browse an interactive map showing recent crime reports. Switch to heat map view to spot hotspot areas instantly.' },
+  { icon: "\uD83D\uDCCD", title: 'Report Incidents', subtitle: 'QUICK AND EASY REPORTING', body: 'Submit reports in seconds. Choose a category, describe what happened, and pin the location with optional privacy masking.' },
+  { icon: "\uD83D\uDD12", title: 'Your Privacy Matters', subtitle: 'REPORT SAFELY', body: 'Enable location masking to offset your pin by ~75m. All reports are reviewed before appearing on the map.' },
 ]
 
 export default function OnboardingScreen() {
