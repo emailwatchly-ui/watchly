@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useRouter, useSegments } from 'expo-router'
 import { AuthProvider, useAuth } from '../hooks/useAuth'
+import { useNotifications } from '../hooks/useNotifications'
 
 function AuthGuard() {
   const { session, loading } = useAuth()
@@ -23,11 +24,17 @@ function AuthGuard() {
   return null
 }
 
+function NotificationSetup() {
+  useNotifications()
+  return null
+}
+
 export default function RootLayout() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
       <AuthGuard />
+      <NotificationSetup />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
