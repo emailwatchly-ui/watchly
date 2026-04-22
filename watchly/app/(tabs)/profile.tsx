@@ -4,7 +4,7 @@ import {
 } from 'react-native'
 import { useState, useCallback } from 'react'
 import { useRouter } from 'expo-router'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect } from 'expo-router'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { COLORS } from '../../constants'
