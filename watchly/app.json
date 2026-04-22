@@ -22,7 +22,8 @@
         }
       },
       "infoPlist": {
-        "NSUserNotificationUsageDescription": "Watchly sends alerts about crime activity in your area."
+        "NSUserNotificationUsageDescription": "Watchly sends alerts about crime activity in your area.",
+        "NSLocationWhenInUseUsageDescription": "Watchly uses your location to place crime reports on the map and to auto-fill the location field when submitting a new report. For example, if you witness a theft nearby, your current location will be used to pin the report accurately."
       },
       "buildNumber": "1",
       "privacyManifests": {
@@ -33,6 +34,11 @@
               "CA92.1"
             ]
           }
+        ]
+      },
+      "entitlements": {
+        "com.apple.developer.applesignin": [
+          "Default"
         ]
       }
     },
@@ -75,7 +81,8 @@
           "color": "#E53E3E",
           "sounds": []
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
