@@ -20,6 +20,9 @@
         "googleSignIn": {
           "reservedClientId": "128071343253-cmbv7a3i62tv55voo1qn5vga8k6icl3l.apps.googleusercontent.com"
         }
+      },
+      "infoPlist": {
+        "NSUserNotificationUsageDescription": "Watchly sends alerts about crime activity in your area."
       }
     },
     "android": {
@@ -52,6 +55,14 @@
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.128071343253-cmbv7a3i62tv55voo1qn5vga8k6icl3l"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#E53E3E",
+          "sounds": []
         }
       ]
     ],
