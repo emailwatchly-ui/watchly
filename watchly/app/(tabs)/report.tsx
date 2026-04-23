@@ -102,7 +102,7 @@ export default function ReportScreen() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedCategory) return Alert.alert('Required', 'Please select a crime category.')
+    if (!selectedCategory) return Alert.alert('Required', 'Please select an incident category.')
     if (!title.trim()) return Alert.alert('Required', 'Please enter a title for the report.')
     if (!location) return Alert.alert('Required', 'Please set the location of the incident.')
     setSubmitting(true)
@@ -155,7 +155,7 @@ export default function ReportScreen() {
 
         {/* STEP 1: Category */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>01 — CRIME TYPE</Text>
+          <Text style={styles.sectionLabel}>01 — INCIDENT TYPE</Text>
           <View style={styles.categoryGrid}>
             {categories.map(cat => (
               <TouchableOpacity
