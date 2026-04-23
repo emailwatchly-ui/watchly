@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { COLORS } from '../constants'
 
 const SLIDES = [
-  { icon: "\uD83D\uDEE1\uFE0F", title: 'Welcome to Watchly', subtitle: 'COMMUNITY SAFETY AWARENESS', body: 'Help keep your community safe by reporting and tracking crime incidents in your area.' },
+  { icon: "\uD83D\uDEE1\uFE0F", title: 'Welcome to Watchly', subtitle: 'COMMUNITY SAFETY AWARENESS', body: 'Help keep your community safe by sharing and tracking safety incidents in your area.' },
   { icon: "\uD83D\uDDFA", title: 'Live Safety Map', subtitle: "SEE WHAT'S HAPPENING NEARBY", body: 'Browse an interactive map showing recent safety incident reports. Switch to heat map view to spot patterns instantly.' },
   { icon: "\uD83D\uDCCD", title: 'Report Incidents', subtitle: 'QUICK AND EASY REPORTING', body: 'Submit reports in seconds. Choose a category, describe what happened, and pin the location with optional privacy masking.' },
   { icon: "\uD83D\uDD12", title: 'Your Privacy Matters', subtitle: 'REPORT SAFELY', body: 'Enable location masking to offset your pin by ~75m. All reports are reviewed before appearing on the map.' },
