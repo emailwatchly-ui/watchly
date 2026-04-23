@@ -113,7 +113,7 @@ export default function LoginScreen() {
           </View>
           <View>
             <Text style={styles.appName}>WATCHLY</Text>
-            <Text style={styles.tagline}>COMMUNITY CRIME AWARENESS</Text>
+            <Text style={styles.tagline}>COMMUNITY SAFETY AWARENESS</Text>
           </View>
         </View>
         <View style={styles.pillRow}>
