@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 10.0.0"
+    "version": ">= 10.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -23,7 +24,8 @@
       },
       "env": {
         "EXPO_PUBLIC_ENV": "preview"
-      }
+      },
+      "autoIncrement": true
     },
     "production": {
       "ios": {
@@ -34,7 +36,8 @@
       },
       "env": {
         "EXPO_PUBLIC_ENV": "production"
-      }
+      },
+      "autoIncrement": true
     }
   },
   "submit": {
