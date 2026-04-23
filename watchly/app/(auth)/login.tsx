@@ -215,6 +215,13 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Law enforcement disclaimer */}
+        <View style={styles.disclaimer}>
+          <Text style={styles.disclaimerText}>
+            {"🚨"} Watchly is a community awareness tool only. It is not affiliated with or connected to any law enforcement agency. For emergencies, always contact your local emergency services.
+          </Text>
+        </View>
+
         <View style={styles.legalRow}>
           <TouchableOpacity onPress={() => router.push('/terms')}>
             <Text style={styles.legalLink}>Terms</Text>
@@ -264,5 +271,20 @@ const styles = StyleSheet.create({
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
   legalLink: { fontSize: 12, color: COLORS.textMuted, textDecorationLine: 'underline' },
   legalSep: { fontSize: 12, color: COLORS.textMuted },
+  disclaimer: {
+    marginHorizontal: 4,
+    marginTop: 8,
+    backgroundColor: 'rgba(229,62,62,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(229,62,62,0.25)',
+    borderRadius: 10,
+    padding: 12,
+  },
+  disclaimerText: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
   version: { fontSize: 9, color: '#2d3148', textAlign: 'center', letterSpacing: 3, marginTop: 16 },
 })
