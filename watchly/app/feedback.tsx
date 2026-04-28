@@ -11,7 +11,7 @@ import { COLORS } from '../constants'
 
 const TYPES = [
   { key: 'feedback', label: 'General Feedback', icon: '💬', desc: 'Share ideas or suggestions' },
-  { key: 'bug',      label: 'Report a Bug',     icon: '🐛', desc: 'Something not working right?' },
+  { key: 'bug',      label: 'Flag a Bug',     icon: '🐛', desc: 'Something not working right?' },
   { key: 'other',    label: 'Other',             icon: '📬', desc: 'Anything else on your mind' },
 ]
 
