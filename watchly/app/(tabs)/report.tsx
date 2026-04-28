@@ -114,7 +114,7 @@ export default function ReportScreen() {
         return Alert.alert('Limit reached', 'You can submit up to 5 reports per day. Please try again tomorrow.')
       }
       const displayLocation = maskLocation ? maskCoordinates(location.lat, location.lng) : location
-      const { error } = await supabase.from('crime_reports').insert({
+      const { error } = await supabase.from('incident_reports').insert({
         user_id: user?.id,
         category_id: selectedCategory,
         location: `POINT(${displayLocation.lng} ${displayLocation.lat})`,
