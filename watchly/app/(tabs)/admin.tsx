@@ -28,9 +28,11 @@ export default function AdminScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<'pending'|'approved'|'rejected'>('pending')
   const [isModerator, setIsModerator] = useState(false)
-  const [activeTab, setActiveTab] = useState<'reports'|'notify'|'feedback'>('reports')
+  const [activeTab, setActiveTab] = useState<'reports'|'tips'|'notify'|'feedback'>('tips')
   const [feedbackItems, setFeedbackItems] = useState<any[]>([])
   const [feedbackFilter, setFeedbackFilter] = useState<'new'|'reviewed'|'resolved'>('new')
+  const [tips, setTips] = useState<any[]>([])
+  const [tipsFilter, setTipsFilter] = useState<'new'|'reviewed'|'posted'|'dismissed'>('new')
   const [notifTitle, setNotifTitle] = useState('')
   const [notifBody, setNotifBody] = useState('')
   const [sending, setSending] = useState(false)
@@ -41,6 +43,7 @@ export default function AdminScreen() {
       .then(({ data }) => setIsModerator(data?.is_moderator || false))
     fetchReports()
     fetchFeedback()
+    fetchTips()
   }, [user, filter]))
 
   const fetchReports = async () => {
@@ -50,6 +53,21 @@ export default function AdminScreen() {
       .eq('status', filter).order('created_at', { ascending: false }).limit(50)
     if (!error && data) setReports(data)
     setLoading(false); setRefreshing(false)
+  }
+
+  const fetchTips = async () => {
+    const { data } = await supabase
+      .from('tips')
+      .select('*, category:incident_categories(name, color)')
+      .eq('status', tipsFilter)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (data) setTips(data)
+  }
+
+  const updateTipStatus = async (id: string, status: 'reviewed'|'posted'|'dismissed') => {
+    await supabase.from('tips').update({ status }).eq('id', id)
+    setTips(prev => prev.filter(t => t.id !== id))
   }
 
   const fetchFeedback = async () => {
@@ -131,6 +149,13 @@ export default function AdminScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
+          style={[styles.topTab, activeTab === 'tips' && styles.topTabActive]}
+          onPress={() => { setActiveTab('tips'); fetchTips() }}>
+          <Text style={[styles.topTabText, activeTab === 'tips' && styles.topTabTextActive]}>
+            {"📬"} TIPS
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.topTab, activeTab === 'notify' && styles.topTabActive]}
           onPress={() => setActiveTab('notify')}>
           <Text style={[styles.topTabText, activeTab === 'notify' && styles.topTabTextActive]}>
@@ -190,6 +215,58 @@ export default function AdminScreen() {
               }
             </TouchableOpacity>
           </View>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      ) : activeTab === 'tips' ? (
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.filterRow}>
+            {(['new','reviewed','posted','dismissed'] as const).map(f => (
+              <TouchableOpacity key={f}
+                style={[styles.filterTab, tipsFilter === f && styles.filterTabActive]}
+                onPress={() => { setTipsFilter(f); fetchTips() }}>
+                <Text style={[styles.filterTabText, tipsFilter === f && styles.filterTabTextActive]}>
+                  {f.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {tips.length === 0 ? (
+            <View style={[styles.center, { marginTop: 60 }]}>
+              <Text style={styles.emptyIcon}>{"📬"}</Text>
+              <Text style={styles.emptyText}>No {tipsFilter} tips</Text>
+            </View>
+          ) : (
+            tips.map(tip => (
+              <View key={tip.id} style={styles.card}>
+                <View style={[styles.cardAccent, { backgroundColor: tip.category?.color || COLORS.primary }]} />
+                <View style={styles.cardBody}>
+                  <View style={styles.cardHeader}>
+                    <Text style={[styles.category, { color: tip.category?.color || COLORS.primary }]}>
+                      {tip.category?.name || 'General'}
+                    </Text>
+                    <Text style={styles.metaText}>
+                      {new Date(tip.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
+                    </Text>
+                  </View>
+                  <Text style={styles.title}>{tip.subject}</Text>
+                  <Text style={styles.description}>{tip.description}</Text>
+                  {tip.address_suburb && (
+                    <Text style={styles.metaText}>{"📍"} {tip.address_suburb}</Text>
+                  )}
+                  {tipsFilter === 'new' && (
+                    <View style={styles.actions}>
+                      <TouchableOpacity style={styles.approveBtn} onPress={() => updateTipStatus(tip.id, 'posted')}>
+                        <Text style={styles.approveBtnText}>{"✅"} Post to Map</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.rejectBtn} onPress={() => updateTipStatus(tip.id, 'dismissed')}>
+                        <Text style={styles.rejectBtnText}>{"❌"} Dismiss</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
           <View style={{ height: 40 }} />
         </ScrollView>
       ) : activeTab === 'feedback' ? (
