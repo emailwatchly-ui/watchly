@@ -31,7 +31,7 @@ export default function ProfileScreen() {
     const [profileRes, reportsRes] = await Promise.all([
       supabase.from('profiles').select('display_name, is_moderator').eq('id', user.id).single(),
       supabase.from('incident_reports')
-        .select('id, title, status, incident_type, incident_date, address_suburb, category:crime_categories(name, color)')
+        .select('id, title, status, incident_type, incident_date, address_suburb, category:incident_categories(name, color)')
         .eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
     ])
     if (profileRes.data) setProfile(profileRes.data)
