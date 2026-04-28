@@ -187,6 +187,11 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
+          <TouchableOpacity style={styles.aboutBtn} onPress={() => router.push('/about')}>
+            <Text style={styles.aboutBtnText}>{"ℹ️"} About Watchly</Text>
+            <Text style={styles.supportBtnArrow}>{"›"}</Text>
+          </TouchableOpacity>
+
           <View style={styles.legalRow}>
             <TouchableOpacity onPress={() => router.push('/privacy')}>
               <Text style={styles.legalLink}>Privacy Policy</Text>
@@ -287,6 +292,14 @@ const styles = StyleSheet.create({
   supportBtnArrow: {
     fontSize: 20, color: COLORS.textMuted, fontWeight: '300',
   },
+  aboutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginHorizontal: 20, marginBottom: 8,
+    backgroundColor: COLORS.bgCard, borderRadius: 12,
+    borderWidth: 1, borderColor: '#2d3148',
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  aboutBtnText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   deleteBtn: {
     marginHorizontal: 20,
     marginBottom: 8,
