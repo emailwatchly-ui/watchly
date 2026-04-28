@@ -21,8 +21,8 @@ export default function TermsScreen() {
         <Text style={styles.body}>You agree to submit only accurate, truthful safety incident postrts based on real incidents. Submitting false or misleading reports is prohibited and may result in account termination.</Text>
         <Text style={styles.section}>3. Community Guidelines</Text>
         <Text style={styles.body}>Reports must not target specific individuals, contain personal identifying information of third parties, include hate speech, or be used for harassment. We reserve the right to remove violating content.</Text>
-        <Text style={styles.section}>4. Not an Emergency Service</Text>
-        <Text style={styles.body}>Watchly is a community awareness tool, not a replacement for emergency services. For emergencies, always call 000. For non-emergency matters, contact your local police station.</Text>
+        <Text style={styles.section}>4. Emergency Services</Text>
+        <Text style={styles.body}>Watchly is a community awareness tool only. For emergencies, always contact your local emergency services. For emergencies, always call 000. For non-emergency matters, contact your local police station.</Text>
         <Text style={styles.section}>5. Rate Limits</Text>
         <Text style={styles.body}>Users are limited to 5 submissions per 24-hour period. Abuse of the reporting system may result in account suspension.</Text>
         <Text style={styles.section}>6. Moderation</Text>
