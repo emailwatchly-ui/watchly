@@ -20,12 +20,12 @@ export default function PrivacyScreen() {
 
         <Text style={styles.section}>1. Information We Collect</Text>
         <Text style={styles.body}>
-          We collect information you provide when creating an account (email address), submitting crime reports (location, incident details, category), and using the app (device information, usage patterns).
+          We collect information you provide when creating an account (email address), submitting safety incident posts (location, incident details, category), and using the app (device information, usage patterns).
         </Text>
 
         <Text style={styles.section}>2. How We Use Your Information</Text>
         <Text style={styles.body}>
-          Your information is used to display crime reports on the community map, improve the app experience, moderate submitted content, and communicate important updates. We do not sell your personal information to third parties.
+          Your information is used to display safety awareness posts on the community map, improve the app experience, moderate submitted content, and communicate important updates. We do not sell your personal information to third parties.
         </Text>
 
         <Text style={styles.section}>3. Location Data</Text>
