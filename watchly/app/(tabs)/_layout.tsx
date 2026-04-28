@@ -50,7 +50,7 @@ export default function TabsLayout() {
         tabBarIcon: ({ color }) => <TabIcon icon={"\uD83D\uDDFA"} color={color} />,
       }} />
       <Tabs.Screen name="report" options={{
-        title: 'Share',
+        title: 'Tip',
         tabBarIcon: ({ color }) => <TabIcon icon={"\uD83D\uDCCB"} color={color} />,
       }} />
       <Tabs.Screen name="profile" options={{
