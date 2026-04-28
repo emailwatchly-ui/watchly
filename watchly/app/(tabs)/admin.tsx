@@ -46,7 +46,7 @@ export default function AdminScreen() {
   const fetchReports = async () => {
     setLoading(true)
     const { data, error } = await supabase
-      .from('moderation_queue').select('*')
+      .from('moderation_queue_view').select('*')
       .eq('status', filter).order('created_at', { ascending: false }).limit(50)
     if (!error && data) setReports(data)
     setLoading(false); setRefreshing(false)
