@@ -22,7 +22,7 @@ export const COLORS = {
   // Map overlay
   mapOverlay: 'rgba(15, 17, 23, 0.85)',
 
-  // Crime category colours (match DB seed)
+  // Category colours (match DB seed)
   categories: {
     'Break & Enter': '#E53E3E',
     'Vehicle Theft': '#DD6B20',
