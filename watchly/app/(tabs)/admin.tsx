@@ -71,7 +71,7 @@ export default function AdminScreen() {
       { text: status === 'approved' ? 'Approve' : 'Reject',
         style: status === 'rejected' ? 'destructive' : 'default',
         onPress: async () => {
-          const { error } = await supabase.from('crime_reports').update({ status }).eq('id', id)
+          const { error } = await supabase.from('incident_reports').update({ status }).eq('id', id)
           if (error) Alert.alert('Error', error.message)
           else setReports(prev => prev.filter(r => r.id !== id))
         }
@@ -168,7 +168,7 @@ export default function AdminScreen() {
             <Text style={styles.inputLabel}>MESSAGE</Text>
             <TextInput
               style={[styles.notifInput, styles.notifInputMulti]}
-              placeholder="e.g. Increased police presence in Civic tonight."
+              placeholder="e.g. Increased patrol activity in Civic tonight."
               placeholderTextColor={COLORS.textMuted}
               value={notifBody}
               onChangeText={setNotifBody}
