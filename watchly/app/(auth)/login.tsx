@@ -215,10 +215,10 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Law enforcement disclaimer */}
+        {/* Safety disclaimer */}
         <View style={styles.disclaimer}>
           <Text style={styles.disclaimerText}>
-            {"🚨"} Watchly is a community awareness tool only. It is not affiliated with or connected to any law enforcement agency. For emergencies, always contact your local emergency services.
+            {"🚨"} Watchly is a community awareness tool only. It has no affiliation with any government or emergency services agency. For emergencies, always contact your local emergency services.
           </Text>
         </View>
 
