@@ -30,7 +30,7 @@ export default function ProfileScreen() {
     setLoading(true)
     const [profileRes, reportsRes] = await Promise.all([
       supabase.from('profiles').select('display_name, is_moderator').eq('id', user.id).single(),
-      supabase.from('crime_reports')
+      supabase.from('incident_reports')
         .select('id, title, status, incident_type, incident_date, address_suburb, category:crime_categories(name, color)')
         .eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
     ])
@@ -180,7 +180,7 @@ export default function ProfileScreen() {
                 <Text style={styles.supportBtnIcon}>{"💬"}</Text>
                 <View style={styles.supportBtnText}>
                   <Text style={styles.supportBtnTitle}>Feedback & Support</Text>
-                  <Text style={styles.supportBtnSub}>Send feedback or report an issue</Text>
+                  <Text style={styles.supportBtnSub}>Send feedback or flag an issue</Text>
                 </View>
                 <Text style={styles.supportBtnArrow}>{"›"}</Text>
               </View>
