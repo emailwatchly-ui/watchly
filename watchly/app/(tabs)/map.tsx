@@ -225,7 +225,7 @@ export default function MapScreen() {
           )
         })}
 
-        {/* Crime pins ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ hidden in heat map mode */}
+        {/* Incident pins ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ hidden in heat map mode */}
         {!showHeatmap && reports.map((report) => (
           <Marker
             key={report.id}
