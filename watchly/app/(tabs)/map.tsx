@@ -84,7 +84,7 @@ function buildHeatClusters(reports: Report[]) {
   return clusters
 }
 
-// Absolute thresholds ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ only turns red with serious crime density
+// Absolute display thresholds ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ only turns red with serious crime density
 function weightToColor(weight: number): string {
   if (weight < 5)  return '#00C800' // green  ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 1-4 reports
   if (weight < 10) return '#FFFF00' // yellow ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ 5-9 reports
