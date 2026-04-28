@@ -39,7 +39,7 @@ export default function ReportScreen() {
   useEffect(() => { fetchCategories() }, [])
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('crime_categories').select('*').order('name')
+    const { data } = await supabase.from('incident_categories').select('*').order('name')
     if (data) setCategories(data)
   }
 
