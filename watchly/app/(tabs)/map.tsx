@@ -108,7 +108,7 @@ export default function MapScreen() {
     const since = new Date()
     since.setDate(since.getDate() - days)
     const { data, error } = await supabase
-      .from('crime_reports_with_category')
+      .from('incidents_with_category')
       .select('id, title, incident_type, incident_date, category_name, category_color, category_icon, address_suburb, latitude, longitude')
       .gte('incident_date', since.toISOString().split('T')[0])
       .order('incident_date', { ascending: false })
